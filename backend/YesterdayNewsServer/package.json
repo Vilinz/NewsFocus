@@ -1,0 +1,56 @@
+{
+  "name": "yesterdaynewsserver",
+  "version": "1.0.0",
+  "description": "Back-end Server for YesterdayNews",
+  "main": "app.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha",
+    "cover": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "import": "node ./data/initDB.js",
+    "start": "node ./bin/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xwy27/YesterdayNewsServer.git"
+  },
+  "keywords": [
+    "News",
+    "Server",
+    "Back-end"
+  ],
+  "author": "xwy27",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xwy27/YesterdayNewsServer/issues"
+  },
+  "homepage": "https://github.com/xwy27/YesterdayNewsServer#readme",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "koa": "^2.2.0",
+    "koa-body": "^4.0.7",
+    "koa-jwt": "^3.5.1",
+    "koa-router": "^7.2.0",
+    "koa-static": "^5.0.0",
+    "log4js": "^4.1.1",
+    "mocha-lcov-reporter": "^1.3.0",
+    "mysql": "^2.17.1",
+    "progress": "^2.0.3"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.4",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1",
+    "supertest": "^4.0.2"
+  },
+  "nyc": {
+    "all": true,
+    "exclude": [
+      "*/config/*.js",
+      "coverage/lcov-report/*.js",
+      "*/controllers/*.js",
+      "*/middleware/*.js",
+      "data/*.js"
+    ]
+  }
+}
