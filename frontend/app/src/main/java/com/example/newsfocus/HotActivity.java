@@ -1,12 +1,34 @@
 package com.example.newsfocus;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.schedulers.Schedulers;
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 
 /**
@@ -27,7 +49,16 @@ public class HotActivity extends Fragment {
     private String mParam1;
     private String mParam2;
 
+    private View view;
+
     private OnFragmentInteractionListener mListener;
+
+    private MyService myservice;
+    private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+
+    private List<News> mData = new ArrayList<News>();
+    private ReAdapter reAdapter;
+    private RecyclerView mRecyclerView;
 
     public HotActivity() {
         // Required empty public constructor
@@ -60,11 +91,61 @@ public class HotActivity extends Fragment {
         }
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_hot, container, false);
+        view = inflater.inflate(R.layout.fragment_hot, container, false);
+
+        mRecyclerView = (RecyclerView)view.findViewById(R.id.recyclerView);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        reAdapter = new ReAdapter(getActivity(), R.layout.new_item, mData);
+        mRecyclerView.setAdapter(reAdapter);
+        //初始化分隔线、添加分隔线
+        DividerItemDecoration mDivider = new DividerItemDecoration(getActivity(),DividerItemDecoration.VERTICAL);
+        mRecyclerView.addItemDecoration(mDivider);
+
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(3, TimeUnit.SECONDS);
+        builder.writeTimeout(3, TimeUnit.SECONDS);
+        builder.readTimeout(3, TimeUnit.SECONDS);
+
+        myservice = (MyService)new Retrofit.Builder().baseUrl("http://47.102.84.27:3000")
+                .client(builder.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .build()
+                .create(MyService.class);
+
+        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+            @Override
+            public void onNext(JsonObject r) {
+                int count = r.getAsJsonArray("data").size();
+                Log.i("count", count + "");
+                for(int i = 0; i < count; i++) {
+                    JsonObject ob = r.getAsJsonArray("data").get(i).getAsJsonObject();
+                    News n = new News(ob.get("group_id").toString(), ob.get("title").toString(), ob.get("author").toString(), ob.get("time").toString(), ob.get("image_infos").toString(), ob.get("comments").toString());
+                    mData.add(n);
+                }
+                reAdapter.refresh();
+            }
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+            }
+        };
+        myservice.getNewHead(0, 10).subscribeOn(Schedulers.newThread()).
+                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+        mCompositeDisposable.add(disposableObserver_login);
+
+        return view;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
