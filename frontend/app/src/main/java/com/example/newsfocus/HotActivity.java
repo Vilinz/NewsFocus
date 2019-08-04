@@ -152,7 +152,7 @@ public class HotActivity extends Fragment {
                 //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
             }
         };
-        ServiceInstance.getInstance().getNewHead(0, 10).subscribeOn(Schedulers.newThread()).
+        ServiceInstance.getInstance().getNewHead(0, 100).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
         mCompositeDisposable.add(disposableObserver_login);
 

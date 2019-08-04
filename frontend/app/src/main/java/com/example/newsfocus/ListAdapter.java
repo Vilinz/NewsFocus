@@ -1,8 +1,15 @@
 package com.example.newsfocus;
 
+import android.app.Notification;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +17,11 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
@@ -133,6 +145,7 @@ public class ListAdapter extends BaseAdapter {
 
             }
         }
+        ImageLoader imageLoader = new ImageLoader();
         switch (type) {
             case TYPE_1:
                 viewHolder1.title.setText(list.get(i).getTitle());
@@ -141,19 +154,23 @@ public class ListAdapter extends BaseAdapter {
             case TYPE_2:
                 viewHolder2.title.setText(list.get(i).getTitle());
                 viewHolder2.author.setText(list.get(i).getAuthor());
-                viewHolder2.imageView.setImageURI(Uri.parse(list.get(i).getImage_info().get(0)));
+                imageLoader.showImageByThead(viewHolder2.imageView, list.get(i).getImage_info().get(0));
                 break;
             case TYPE_3:
                 viewHolder3.title.setText(list.get(i).getTitle());
                 viewHolder3.author.setText(list.get(i).getAuthor());
-                viewHolder3.imageView.setImageURI(Uri.parse(list.get(i).getImage_info().get(0)));
+                imageLoader.showImageByThead(viewHolder3.imageView, list.get(i).getImage_info().get(0));
                 break;
             case TYPE_4:
+                ImageLoader imageLoader1 = new ImageLoader();
+                ImageLoader imageLoader2 = new ImageLoader();
                 viewHolder4.title.setText(list.get(i).getTitle());
                 viewHolder4.author.setText(list.get(i).getAuthor());
-                viewHolder4.imageView1.setImageURI(Uri.parse(list.get(i).getImage_info().get(0)));
-                viewHolder4.imageView2.setImageURI(Uri.parse(list.get(i).getImage_info().get(1)));
-                viewHolder4.imageView3.setImageURI(Uri.parse(list.get(i).getImage_info().get(2)));
+                imageLoader.showImageByThead(viewHolder4.imageView1, list.get(i).getImage_info().get(0));
+                imageLoader1.showImageByThead(viewHolder4.imageView2, list.get(i).getImage_info().get(1));
+                imageLoader2.showImageByThead(viewHolder4.imageView3, list.get(i).getImage_info().get(2));
+                Log.i("1111", list.get(i).getImage_info().get(0));
+                Log.i("222", list.get(i).getImage_info().get(1));
                 break;
         }
 
@@ -184,4 +201,78 @@ public class ListAdapter extends BaseAdapter {
         public ImageView imageView3;
     }
 
+    //---------------------------
+    //load images
+    public class ImageLoader {
+        private ImageView mImageView;
+        private String mUrl;
+
+        public void showImageByThead(ImageView iv, final String url) {
+            mImageView = iv;
+            mUrl = url;
+            new Thread() {
+                public void run() {
+                    Bitmap bitmap = getBitmapFromUrl(url);
+                    Message message = Message.obtain();
+                    message.obj = bitmap;
+                    mHandler.sendMessage(message);
+                }
+            }.start();
+        }
+
+        private Handler mHandler = new Handler(){
+            public void handleMessage(android.os.Message msg) {
+                super.handleMessage(msg);
+
+                mImageView.setImageBitmap((Bitmap) msg.obj);
+            }
+        };
+
+        private Bitmap changeBitmapSize(Bitmap bitmap) {
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            Log.e("width","width:"+width);
+            Log.e("height","height:"+height);
+            int newWidth=100;
+            int newHeight=60;
+            //计算压缩的比率
+            float scaleWidth=((float)newWidth)/width;
+            float scaleHeight=((float)newHeight)/height;
+
+            //获取想要缩放的matrix
+            Matrix matrix = new Matrix();
+            matrix.postScale(scaleWidth,scaleHeight);
+
+            //获取新的bitmap
+            bitmap=Bitmap.createBitmap(bitmap,0,0,width,height,matrix,true);
+            bitmap.getWidth();
+            bitmap.getHeight();
+            return bitmap;
+        }
+
+
+        public Bitmap getBitmapFromUrl(String urlString){
+            Bitmap bitmap;
+            InputStream is = null;
+            try {
+                URL mUrl= new URL(urlString);
+                HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
+                is = new BufferedInputStream(connection.getInputStream());
+                bitmap=BitmapFactory.decodeStream(is);
+                connection.disconnect();
+                return bitmap;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }finally{
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+    }
 }
