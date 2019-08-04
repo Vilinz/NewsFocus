@@ -12,10 +12,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,12 +57,11 @@ public class HotActivity extends Fragment {
 
     private OnFragmentInteractionListener mListener;
 
-    private MyService myservice;
     private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
 
     private List<News> mData = new ArrayList<News>();
-    private ReAdapter reAdapter;
-    private RecyclerView mRecyclerView;
+    private ListAdapter listAdapter;
+    private ListView listView;
 
     public HotActivity() {
         // Required empty public constructor
@@ -98,26 +101,20 @@ public class HotActivity extends Fragment {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_hot, container, false);
 
-        mRecyclerView = (RecyclerView)view.findViewById(R.id.recyclerView);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        reAdapter = new ReAdapter(getActivity(), R.layout.new_item, mData);
-        mRecyclerView.setAdapter(reAdapter);
-        //初始化分隔线、添加分隔线
-        DividerItemDecoration mDivider = new DividerItemDecoration(getActivity(),DividerItemDecoration.VERTICAL);
-        mRecyclerView.addItemDecoration(mDivider);
+        listView = (ListView)view.findViewById(R.id.listView);
+        listAdapter = new ListAdapter(getActivity(), mData);
+        listView.setAdapter(listAdapter);
 
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.connectTimeout(3, TimeUnit.SECONDS);
-        builder.writeTimeout(3, TimeUnit.SECONDS);
-        builder.readTimeout(3, TimeUnit.SECONDS);
-
-        myservice = (MyService)new Retrofit.Builder().baseUrl("http://47.102.84.27:3000")
-                .client(builder.build())
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build()
-                .create(MyService.class);
-
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(getContext(), NewDetailActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("group_id", mData.get(position).getGroup_id());
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
             @Override
             public void onNext(JsonObject r) {
@@ -125,10 +122,24 @@ public class HotActivity extends Fragment {
                 Log.i("count", count + "");
                 for(int i = 0; i < count; i++) {
                     JsonObject ob = r.getAsJsonArray("data").get(i).getAsJsonObject();
-                    News n = new News(ob.get("group_id").toString(), ob.get("title").toString(), ob.get("author").toString(), ob.get("time").toString(), ob.get("image_infos").toString(), ob.get("comments").toString());
+                    String image_infos = ob.get("image_infos").getAsString();
+                    JsonParser jsonParser = new JsonParser();
+                    JsonArray array = (JsonArray) jsonParser.parse(image_infos);
+                    List<String> url = new ArrayList<String>();
+                    for(int j = 0; j < array.size(); j++) {
+                        JsonObject temp = array.get(j).getAsJsonObject();
+                        String url_temp = temp.get("url_prefix").getAsString() + temp.get("web_uri").getAsString();
+                        url.add(url_temp);
+                    }
+                    News n = new News(ob.get("group_id").getAsString(),
+                                        ob.get("title").getAsString(),
+                                        ob.get("author").getAsString(),
+                                        ob.get("time").getAsString(),
+                                        url,
+                                        ob.get("comments").getAsString());
                     mData.add(n);
                 }
-                reAdapter.refresh();
+                listAdapter.refresh();
             }
             @Override
             public void onError(Throwable e) {
@@ -141,7 +152,7 @@ public class HotActivity extends Fragment {
                 //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
             }
         };
-        myservice.getNewHead(0, 10).subscribeOn(Schedulers.newThread()).
+        ServiceInstance.getInstance().getNewHead(0, 10).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
         mCompositeDisposable.add(disposableObserver_login);
 

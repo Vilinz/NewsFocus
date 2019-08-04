@@ -7,10 +7,10 @@ public class News {
     private String title;
     private String author;
     private String time;
-    private String image_info;
+    private List<String> image_info;
     private String comments;
 
-    public News(String group_id, String title, String author, String time, String image_info, String comments) {
+    public News(String group_id, String title, String author, String time, List<String> image_info, String comments) {
         this.group_id = group_id;
         this.title = title;
         this.author = author;
@@ -51,11 +51,11 @@ public class News {
         this.time = time;
     }
 
-    public String getImage_info() {
+    public List<String> getImage_info() {
         return image_info;
     }
 
-    public void setImage_info(String image_info) {
+    public void setImage_info(List<String> image_info) {
         this.image_info = image_info;
     }
 
