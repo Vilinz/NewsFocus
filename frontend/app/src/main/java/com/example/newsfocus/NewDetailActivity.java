@@ -1,5 +1,6 @@
 package com.example.newsfocus;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import com.google.gson.JsonObject;
 
@@ -22,9 +24,22 @@ public class NewDetailActivity extends AppCompatActivity {
     private WebView webContent;
 
     @Override
+    public boolean onSupportNavigateUp()
+    {
+        finish();
+        return super.onSupportNavigateUp();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_detail);
+
+        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null){
+            // actionBar.setHomeButtonEnabled(true);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
         webContent = findViewById(R.id.web_content);
 

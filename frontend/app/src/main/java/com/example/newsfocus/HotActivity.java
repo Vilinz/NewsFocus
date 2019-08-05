@@ -57,11 +57,12 @@ public class HotActivity extends Fragment {
 
     private OnFragmentInteractionListener mListener;
 
-    private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-
     private List<News> mData = new ArrayList<News>();
     private ListAdapter listAdapter;
-    private ListView listView;
+    private MyListView listView;
+
+    private int currentOffset = 0;
+    private int count = 5;
 
     public HotActivity() {
         // Required empty public constructor
@@ -101,7 +102,7 @@ public class HotActivity extends Fragment {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_hot, container, false);
 
-        listView = (ListView)view.findViewById(R.id.listView);
+        listView = (MyListView)view.findViewById(R.id.listView);
         listAdapter = new ListAdapter(getActivity(), mData);
         listView.setAdapter(listAdapter);
 
@@ -115,6 +116,14 @@ public class HotActivity extends Fragment {
                 startActivity(intent);
             }
         });
+        listView.setONLoadMoreListener(new MyListView.OnLoadMoreListener() {
+            @Override
+            public void onloadMore() {
+                loadMore();
+            }
+        });
+
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
             @Override
             public void onNext(JsonObject r) {
@@ -152,8 +161,9 @@ public class HotActivity extends Fragment {
                 //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
             }
         };
-        ServiceInstance.getInstance().getNewHead(0, 100).subscribeOn(Schedulers.newThread()).
+        ServiceInstance.getInstance().getNewHead(currentOffset, count).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+        currentOffset += count;
         mCompositeDisposable.add(disposableObserver_login);
 
         return view;
@@ -198,4 +208,49 @@ public class HotActivity extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
+    private void loadMore() {
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+            @Override
+            public void onNext(JsonObject r) {
+                int count = r.getAsJsonArray("data").size();
+                Log.i("count", count + "");
+                for(int i = 0; i < count; i++) {
+                    JsonObject ob = r.getAsJsonArray("data").get(i).getAsJsonObject();
+                    String image_infos = ob.get("image_infos").getAsString();
+                    JsonParser jsonParser = new JsonParser();
+                    JsonArray array = (JsonArray) jsonParser.parse(image_infos);
+                    List<String> url = new ArrayList<String>();
+                    for(int j = 0; j < array.size(); j++) {
+                        JsonObject temp = array.get(j).getAsJsonObject();
+                        String url_temp = temp.get("url_prefix").getAsString() + temp.get("web_uri").getAsString();
+                        url.add(url_temp);
+                    }
+                    News n = new News(ob.get("group_id").getAsString(),
+                            ob.get("title").getAsString(),
+                            ob.get("author").getAsString(),
+                            ob.get("time").getAsString(),
+                            url,
+                            ob.get("comments").getAsString());
+                    mData.add(n);
+                }
+                listAdapter.refresh();
+                listView.setLoadCompleted();
+            }
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+            }
+        };
+        ServiceInstance.getInstance().getNewHead(currentOffset, count).subscribeOn(Schedulers.newThread()).
+                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+        currentOffset += count;
+        mCompositeDisposable.add(disposableObserver_login);
+    }
 }

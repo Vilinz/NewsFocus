@@ -1,5 +1,6 @@
 package com.example.newsfocus;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,6 +11,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,10 +35,20 @@ public class ListAdapter extends BaseAdapter {
     final int TYPE_2 = 1; //一张图
     final int TYPE_3 = 2; //两张图
     final int TYPE_4 = 3; //三张以上
+    private LruCache<String, Bitmap> mMemoryCaches;
+
+    private int maxMemory = (int)Runtime.getRuntime().maxMemory();
+    private int cacheSizes = maxMemory/5;
 
     public ListAdapter(Context context,List<News> list) {
         this.context=context;
         this.list=list;
+        mMemoryCaches = new LruCache<String, Bitmap>(cacheSizes) {
+            @Override
+            protected int sizeOf(String key, Bitmap value) {
+                return value.getByteCount();
+            }
+        };
     }
     public void addItem(News g) {
         list.add(g);
@@ -145,6 +157,23 @@ public class ListAdapter extends BaseAdapter {
 
             }
         }
+
+        switch (type) {
+            case TYPE_1:
+                break;
+            case TYPE_2:
+                viewHolder2.imageView.setImageResource(R.drawable.ic_action_name);
+                break;
+            case TYPE_3:
+                viewHolder3.imageView.setImageResource(R.drawable.ic_action_name);
+                break;
+            case TYPE_4:
+                viewHolder4.imageView1.setImageResource(R.drawable.ic_action_name);
+                viewHolder4.imageView2.setImageResource(R.drawable.ic_action_name);
+                viewHolder4.imageView3.setImageResource(R.drawable.ic_action_name);
+                break;
+        }
+
         ImageLoader imageLoader = new ImageLoader();
         switch (type) {
             case TYPE_1:
@@ -154,11 +183,13 @@ public class ListAdapter extends BaseAdapter {
             case TYPE_2:
                 viewHolder2.title.setText(list.get(i).getTitle());
                 viewHolder2.author.setText(list.get(i).getAuthor());
+                viewHolder2.imageView.setTag(list.get(i).getImage_info().get(0));
                 imageLoader.showImageByThead(viewHolder2.imageView, list.get(i).getImage_info().get(0));
                 break;
             case TYPE_3:
                 viewHolder3.title.setText(list.get(i).getTitle());
                 viewHolder3.author.setText(list.get(i).getAuthor());
+                viewHolder3.imageView.setTag(list.get(i).getImage_info().get(0));
                 imageLoader.showImageByThead(viewHolder3.imageView, list.get(i).getImage_info().get(0));
                 break;
             case TYPE_4:
@@ -166,11 +197,12 @@ public class ListAdapter extends BaseAdapter {
                 ImageLoader imageLoader2 = new ImageLoader();
                 viewHolder4.title.setText(list.get(i).getTitle());
                 viewHolder4.author.setText(list.get(i).getAuthor());
+                viewHolder4.imageView1.setTag(list.get(i).getImage_info().get(0));
+                viewHolder4.imageView2.setTag(list.get(i).getImage_info().get(1));
+                viewHolder4.imageView3.setTag(list.get(i).getImage_info().get(2));
                 imageLoader.showImageByThead(viewHolder4.imageView1, list.get(i).getImage_info().get(0));
                 imageLoader1.showImageByThead(viewHolder4.imageView2, list.get(i).getImage_info().get(1));
                 imageLoader2.showImageByThead(viewHolder4.imageView3, list.get(i).getImage_info().get(2));
-                Log.i("1111", list.get(i).getImage_info().get(0));
-                Log.i("222", list.get(i).getImage_info().get(1));
                 break;
         }
 
@@ -210,45 +242,30 @@ public class ListAdapter extends BaseAdapter {
         public void showImageByThead(ImageView iv, final String url) {
             mImageView = iv;
             mUrl = url;
-            new Thread() {
-                public void run() {
-                    Bitmap bitmap = getBitmapFromUrl(url);
-                    Message message = Message.obtain();
-                    message.obj = bitmap;
-                    mHandler.sendMessage(message);
-                }
-            }.start();
+
+            Bitmap bitmap = getBitmapFromLrucache(mUrl);
+            if(bitmap != null) {
+                mImageView.setImageBitmap(bitmap);
+            } else {
+                new Thread() {
+                    public void run() {
+                        Bitmap bitmap = getBitmapFromUrl(url);
+                        Message message = Message.obtain();
+                        message.obj = bitmap;
+                        mHandler.sendMessage(message);
+                    }
+                }.start();
+            }
         }
 
         private Handler mHandler = new Handler(){
             public void handleMessage(android.os.Message msg) {
                 super.handleMessage(msg);
-
-                mImageView.setImageBitmap((Bitmap) msg.obj);
+                if(mImageView.getTag().equals(mUrl)) {
+                    mImageView.setImageBitmap((Bitmap) msg.obj);
+                }
             }
         };
-
-        private Bitmap changeBitmapSize(Bitmap bitmap) {
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            Log.e("width","width:"+width);
-            Log.e("height","height:"+height);
-            int newWidth=100;
-            int newHeight=60;
-            //计算压缩的比率
-            float scaleWidth=((float)newWidth)/width;
-            float scaleHeight=((float)newHeight)/height;
-
-            //获取想要缩放的matrix
-            Matrix matrix = new Matrix();
-            matrix.postScale(scaleWidth,scaleHeight);
-
-            //获取新的bitmap
-            bitmap=Bitmap.createBitmap(bitmap,0,0,width,height,matrix,true);
-            bitmap.getWidth();
-            bitmap.getHeight();
-            return bitmap;
-        }
 
 
         public Bitmap getBitmapFromUrl(String urlString){
@@ -273,6 +290,17 @@ public class ListAdapter extends BaseAdapter {
                 }
             }
             return null;
+        }
+    }
+
+    //缓存
+    public Bitmap getBitmapFromLrucache(String url) {
+        return mMemoryCaches.get(url);
+    }
+
+    public void addBitmapToLrucaches(String url, Bitmap bitmap) {
+        if(getBitmapFromLrucache(url) == null) {
+            mMemoryCaches.put(url, bitmap);
         }
     }
 }
