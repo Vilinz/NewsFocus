@@ -7,6 +7,10 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -28,6 +32,9 @@ public class MyActivity extends Fragment {
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
+    private ListView listView;
+    private List<SampleClass> list;
+    private SampleListAdapter sampleListAdapter;
 
     public MyActivity() {
         // Required empty public constructor
@@ -64,7 +71,14 @@ public class MyActivity extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_my, container, false);
+
+        View view = inflater.inflate(R.layout.fragment_my, container, false);
+        listView = view.findViewById(R.id.listView);
+        list = new ArrayList<SampleClass>();
+        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
+        sampleListAdapter = new SampleListAdapter(list, getActivity());
+        listView.setAdapter(sampleListAdapter);
+        return view;
     }
 
     // TODO: Rename method, update argument and hook method into UI event

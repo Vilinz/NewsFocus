@@ -28,6 +28,8 @@ public class MainActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getSupportActionBar().hide();
+
         init();
         mFragmentAdapter = new FragmentAdapter(this.getSupportFragmentManager(), mFragmentList);
         vp.setOffscreenPageLimit(3);
