@@ -76,6 +76,8 @@ public class MyActivity extends Fragment {
         listView = view.findViewById(R.id.listView);
         list = new ArrayList<SampleClass>();
         list.add(new SampleClass("设置", R.drawable.ic_action_setting));
+        list.add(new SampleClass("上传头像", R.drawable.ic_action_upload_image));
+        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
         sampleListAdapter = new SampleListAdapter(list, getActivity());
         listView.setAdapter(sampleListAdapter);
         return view;
