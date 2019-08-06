@@ -1,6 +1,8 @@
 package com.example.newsfocus;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -52,7 +54,16 @@ public class LoginActivity extends AppCompatActivity {
                         String result = r.get("message").getAsString();
                         if(result.equals("success")) {
                             Toast.makeText(getApplicationContext(), R.string.login_success, Toast.LENGTH_LONG).show();
+                            SharedPreferences sharedPreferences= getSharedPreferences("token", Context.MODE_PRIVATE);
+                            //步骤2： 实例化SharedPreferences.Editor对象
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            //步骤3：将获取过来的值放入文件
+                            editor.putString("username", username.getText().toString());
+                            editor.putString("password", password.getText().toString());
+                            editor.putString("token",r.get("token").getAsString());
+                            editor.commit();
                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            intent.putExtra("username", username.getText().toString());
                             startActivity(intent);
                         }
                     }

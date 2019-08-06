@@ -1,13 +1,17 @@
 package com.example.newsfocus;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +26,16 @@ public class MainActivity
     private MyActivity my_fragment;
     private List<Fragment> mFragmentList = new ArrayList<Fragment>();
     private FragmentAdapter mFragmentAdapter;
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if(intent != null) {
+            String username = intent.getStringExtra("username");
+            EventBus.getDefault().post(username);
+            Log.i("new", "iiiiiiiiiiiiiiii" + username);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

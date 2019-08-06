@@ -21,6 +21,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +64,7 @@ public class MyActivity extends Fragment {
     private TextView commentCountView;
 
     private boolean isLogin = false;
+    private String username = null;
 
     public MyActivity() {
         // Required empty public constructor
@@ -99,6 +104,7 @@ public class MyActivity extends Fragment {
         // Inflate the layout for this fragment
 
         Log.i("ooooooooooo", "creatview");
+        EventBus.getDefault().register(this);
         final View view = inflater.inflate(R.layout.fragment_my, container, false);
         listView = view.findViewById(R.id.listView);
         list = new ArrayList<SampleClass>();
@@ -118,7 +124,9 @@ public class MyActivity extends Fragment {
                     @Override
                     public void onNext(JsonObject r) {
                         Log.i("veri", r.toString());
-
+                        username = r.get("username").getAsString();
+                        isLogin = true;
+                        setLogin(username);
                     }
                     @Override
                     public void onError(Throwable e) {
@@ -191,11 +199,36 @@ public class MyActivity extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
     public void initView(View view) {
         selectButton = view.findViewById(R.id.button);
         headImage = view.findViewById(R.id.head_image);
         usernameView = view.findViewById(R.id.username);
         starCountView = view.findViewById(R.id.star_count);
         commentCountView = view.findViewById(R.id.comment_count);
+    }
+
+    public void setLogin(String u) {
+        selectButton.setVisibility(View.GONE);
+        headImage.setVisibility(View.VISIBLE);
+        usernameView.setVisibility(View.VISIBLE);
+        starCountView.setVisibility(View.VISIBLE);
+        commentCountView.setVisibility(View.VISIBLE);
+        usernameView.setText(u);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void LoginChange(String str) {
+        selectButton.setVisibility(View.GONE);
+        headImage.setVisibility(View.VISIBLE);
+        usernameView.setVisibility(View.VISIBLE);
+        starCountView.setVisibility(View.VISIBLE);
+        commentCountView.setVisibility(View.VISIBLE);
+        usernameView.setText(str);
     }
 }

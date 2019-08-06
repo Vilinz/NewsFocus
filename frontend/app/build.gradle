@@ -45,4 +45,6 @@ dependencies {
     implementation 'com.jakewharton.retrofit:retrofit2-rxjava2-adapter:1.0.0'
 
     implementation 'org.jsoup:jsoup:1.10.2'
+
+    implementation 'org.greenrobot:eventbus:3.0.0'
 }
