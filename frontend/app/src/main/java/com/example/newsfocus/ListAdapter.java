@@ -157,7 +157,7 @@ public class ListAdapter extends BaseAdapter {
 
             }
         }
-
+        /*
         switch (type) {
             case TYPE_1:
                 break;
@@ -173,7 +173,7 @@ public class ListAdapter extends BaseAdapter {
                 viewHolder4.imageView3.setImageResource(R.drawable.ic_action_name);
                 break;
         }
-
+        */
         ImageLoader imageLoader = new ImageLoader();
         switch (type) {
             case TYPE_1:
@@ -183,12 +183,18 @@ public class ListAdapter extends BaseAdapter {
             case TYPE_2:
                 viewHolder2.title.setText(list.get(i).getTitle());
                 viewHolder2.author.setText(list.get(i).getAuthor());
+                if(list.get(i).getImage_info().get(0).equals(viewHolder2.imageView.getTag())) {
+                    break;
+                }
                 viewHolder2.imageView.setTag(list.get(i).getImage_info().get(0));
                 imageLoader.showImageByThead(viewHolder2.imageView, list.get(i).getImage_info().get(0));
                 break;
             case TYPE_3:
                 viewHolder3.title.setText(list.get(i).getTitle());
                 viewHolder3.author.setText(list.get(i).getAuthor());
+                if(list.get(i).getImage_info().get(0).equals(viewHolder3.imageView.getTag())) {
+                    break;
+                }
                 viewHolder3.imageView.setTag(list.get(i).getImage_info().get(0));
                 imageLoader.showImageByThead(viewHolder3.imageView, list.get(i).getImage_info().get(0));
                 break;
@@ -197,6 +203,11 @@ public class ListAdapter extends BaseAdapter {
                 ImageLoader imageLoader2 = new ImageLoader();
                 viewHolder4.title.setText(list.get(i).getTitle());
                 viewHolder4.author.setText(list.get(i).getAuthor());
+                if(list.get(i).getImage_info().get(0).equals(viewHolder4.imageView1.getTag())
+                    && list.get(i).getImage_info().get(1).equals(viewHolder4.imageView2.getTag())
+                    && list.get(i).getImage_info().get(2).equals(viewHolder4.imageView3.getTag())) {
+                    break;
+                }
                 viewHolder4.imageView1.setTag(list.get(i).getImage_info().get(0));
                 viewHolder4.imageView2.setTag(list.get(i).getImage_info().get(1));
                 viewHolder4.imageView3.setTag(list.get(i).getImage_info().get(2));

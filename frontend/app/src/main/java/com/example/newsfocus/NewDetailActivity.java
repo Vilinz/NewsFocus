@@ -2,21 +2,29 @@ package com.example.newsfocus;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
+import com.example.newsfocus.tools.StringUtils;
 import com.google.gson.JsonObject;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -26,7 +34,7 @@ import io.reactivex.schedulers.Schedulers;
 public class NewDetailActivity extends AppCompatActivity {
     private String group_id;
     private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-    private WebView webContent;
+    private WebView contentWebView;
 
     @Override
     public boolean onSupportNavigateUp()
@@ -46,7 +54,7 @@ public class NewDetailActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        webContent = findViewById(R.id.web_content);
+        contentWebView = findViewById(R.id.web_content);
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
@@ -56,17 +64,70 @@ public class NewDetailActivity extends AppCompatActivity {
         }
     }
 
+    class JavascriptImgInterface{
+        private ArrayList<String> imageUrls;
+
+        public JavascriptImgInterface(ArrayList<String> imageUrls) {
+            this.imageUrls = imageUrls;
+        }
+        /**
+         * 注意： 在Android4.2极其以上系统需要给提供js调用的方法前加入一个注释：@JavaScriptInterface;
+         * 如果方法被标识@JavaScriptInterface则Js可以成功调用这个Java方法，否则调用不成功。
+         * @param img
+         */
+        @JavascriptInterface
+        public void showImg(String img){
+            //利用js传过来的参数得到图片的地址
+            Log.d("HERE", "showImg: "+ img);
+            Intent intent = new Intent(NewDetailActivity.this, BigImageActivity.class);
+            intent.putExtra("imageUrl", img);
+            intent.putStringArrayListExtra("imageUrls", imageUrls);
+            // intent.putExtra("imageUrls", this.imageUrls);
+            startActivity(intent);
+        }
+    }
+
     public void getDetail(String group_id) {
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
             @Override
             public void onNext(JsonObject r) {
                 String html = r.getAsJsonObject("data").get("content").getAsString().replace("\\", "");
+
+                String javascript ="function findImg(){"+
+                        "var objs = document.getElementsByTagName('img');"+
+                        "for(var i=0;i<objs.length;i++){"+
+                        "objs[i].onclick=function(){" +
+                        "window.connect.showImg(this.src)" +
+                        "}"+
+                        "}}"+
+                        "function setWidth() {" +
+                        "var objs = document.getElementsByTagName('img');" +
+                        "for(var i=0;i<objs.length;i++)" +
+                        "{" +
+                        "var img = objs[i];" +
+                        "img.style.width = '100%';img.style.height = 'auto';" +
+                        "}}";
+                //拼接成一个完成的 HTML，
+                html = html.substring(0, 12) + "<script> " + javascript + " </script>" + html.substring(12);
+
                 Log.i("html", html);
-                webContent.loadDataWithBaseURL(null, getNewCleanContent(html), "text/html", "utf-8",
-                        null);
-                webContent.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-                webContent.getSettings().setJavaScriptEnabled(true); //设置支持Javascript
-                webContent.requestFocus();
+
+                ArrayList<String> urls = StringUtils.returnImageUrlsFromHtml(html);
+                contentWebView.loadDataWithBaseURL(null,html, "text/html",  "utf-8", null);
+                WebSettings webSettings = contentWebView.getSettings();
+                webSettings.setJavaScriptEnabled(true);// 启动js脚本
+                contentWebView.addJavascriptInterface(new JavascriptImgInterface(urls), "connect");
+
+                contentWebView.setWebViewClient(new WebViewClient(){
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        String onClickFunction = "javascript:findImg()";
+                        String setWidthFunction = "javascript:setWidth()";
+                        contentWebView.loadUrl(onClickFunction);
+                        contentWebView.loadUrl(setWidthFunction);
+                        super.onPageFinished(view, url);
+                    }
+                });
             }
             @Override
             public void onError(Throwable e) {

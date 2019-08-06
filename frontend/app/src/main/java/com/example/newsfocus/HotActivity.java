@@ -146,9 +146,9 @@ public class HotActivity extends Fragment {
                                         ob.get("time").getAsString(),
                                         url,
                                         ob.get("comments").getAsString());
-                    mData.add(n);
+                    // mData.add(n);
+                    listAdapter.addItem(n);
                 }
-                listAdapter.refresh();
             }
             @Override
             public void onError(Throwable e) {
@@ -234,7 +234,7 @@ public class HotActivity extends Fragment {
                             ob.get("comments").getAsString());
                     mData.add(n);
                 }
-                listAdapter.refresh();
+                // listAdapter.refresh();
                 listView.setLoadCompleted();
             }
             @Override

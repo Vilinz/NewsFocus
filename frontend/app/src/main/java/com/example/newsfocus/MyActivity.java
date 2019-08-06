@@ -130,7 +130,7 @@ public class MyActivity extends Fragment {
                     }
                     @Override
                     public void onError(Throwable e) {
-                        Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
                         e.printStackTrace();
                     }
 
