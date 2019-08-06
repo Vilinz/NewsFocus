@@ -13,6 +13,11 @@ import android.widget.Toolbar;
 
 import com.google.gson.JsonObject;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
@@ -57,7 +62,7 @@ public class NewDetailActivity extends AppCompatActivity {
             public void onNext(JsonObject r) {
                 String html = r.getAsJsonObject("data").get("content").getAsString().replace("\\", "");
                 Log.i("html", html);
-                webContent.loadDataWithBaseURL(null, html, "text/html", "utf-8",
+                webContent.loadDataWithBaseURL(null, getNewCleanContent(html), "text/html", "utf-8",
                         null);
                 webContent.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
                 webContent.getSettings().setJavaScriptEnabled(true); //设置支持Javascript
@@ -77,5 +82,22 @@ public class NewDetailActivity extends AppCompatActivity {
         ServiceInstance.getInstance().getDetail(group_id).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
         mCompositeDisposable.add(disposableObserver_login);
+    }
+
+    /**
+     * 将html文本内容中包含img标签的图片，宽度变为屏幕宽度，高度根据宽度比例自适应
+     **/
+    public String getNewCleanContent(String htmltext){
+        try {
+            Document doc= Jsoup.parse(htmltext);
+            Elements elements=doc.getElementsByTag("img");
+            for (Element element : elements) {
+                element.attr("width","100%").attr("height","auto");
+            }
+
+            return doc.toString();
+        } catch (Exception e) {
+            return htmltext;
+        }
     }
 }

@@ -1,16 +1,33 @@
 package com.example.newsfocus;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.schedulers.Schedulers;
 
 
 /**
@@ -35,6 +52,14 @@ public class MyActivity extends Fragment {
     private ListView listView;
     private List<SampleClass> list;
     private SampleListAdapter sampleListAdapter;
+
+    private Button selectButton;
+    private ImageView headImage;
+    private TextView usernameView;
+    private TextView starCountView;
+    private TextView commentCountView;
+
+    private boolean isLogin = false;
 
     public MyActivity() {
         // Required empty public constructor
@@ -65,6 +90,7 @@ public class MyActivity extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+        Log.i("ooooooooooo", "creat");
     }
 
     @Override
@@ -72,7 +98,8 @@ public class MyActivity extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
 
-        View view = inflater.inflate(R.layout.fragment_my, container, false);
+        Log.i("ooooooooooo", "creatview");
+        final View view = inflater.inflate(R.layout.fragment_my, container, false);
         listView = view.findViewById(R.id.listView);
         list = new ArrayList<SampleClass>();
         list.add(new SampleClass("设置", R.drawable.ic_action_setting));
@@ -80,6 +107,48 @@ public class MyActivity extends Fragment {
         list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
         sampleListAdapter = new SampleListAdapter(list, getActivity());
         listView.setAdapter(sampleListAdapter);
+
+        initView(view);
+        try {
+            SharedPreferences sp = this.getActivity().getSharedPreferences("token", Context.MODE_PRIVATE);
+            if(sp.contains("token")) {
+                String token = sp.getString("token", null);
+                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+                    @Override
+                    public void onNext(JsonObject r) {
+                        Log.i("veri", r.toString());
+
+                    }
+                    @Override
+                    public void onError(Throwable e) {
+                        Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+                    }
+                };
+                ServiceInstance.getInstance().verification(token).subscribeOn(Schedulers.newThread()).
+                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+                mCompositeDisposable.add(disposableObserver_login);
+            }
+        } catch (Exception e) {
+            Log.i("pppppppppppppp", "ppppppppppppp");
+        }
+
+        if(!isLogin) {
+            selectButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), RegisterActivity.class);
+                    startActivity(intent);
+                }
+            });
+        }
+
         return view;
     }
 
@@ -120,5 +189,13 @@ public class MyActivity extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+    public void initView(View view) {
+        selectButton = view.findViewById(R.id.button);
+        headImage = view.findViewById(R.id.head_image);
+        usernameView = view.findViewById(R.id.username);
+        starCountView = view.findViewById(R.id.star_count);
+        commentCountView = view.findViewById(R.id.comment_count);
     }
 }
