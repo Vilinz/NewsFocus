@@ -48,6 +48,7 @@ public class NewDetailActivity extends AppCompatActivity {
     private String time;
     private String title;
     private String comments;
+    private TextView commentTextView;
 
     @Override
     public boolean onSupportNavigateUp()
@@ -73,6 +74,7 @@ public class NewDetailActivity extends AppCompatActivity {
         titleView = findViewById(R.id.title);
         timeView = findViewById(R.id.time);
         authorView = findViewById(R.id.author);
+        commentTextView = findViewById(R.id.comment);
 
         list = new ArrayList<SampleClass>();
         sampleListAdapter = new SampleListAdapter(list, getApplicationContext());
@@ -89,6 +91,13 @@ public class NewDetailActivity extends AppCompatActivity {
             comments = bundle.getString("comments");
             getDetail(group_id);
         }
+
+        commentTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showCommentDialog();
+            }
+        });
     }
 
     class JavascriptImgInterface{
@@ -205,5 +214,14 @@ public class NewDetailActivity extends AppCompatActivity {
         titleView.setText(title);
         timeView.setText("时间" + time);
         authorView.setText(author);
+    }
+
+    private void showCommentDialog() {
+        new CommentDialog("优质评论将会被优先展示", new CommentDialog.SendListener() {
+            @Override
+            public void sendComment(String inputText) {
+                Toast.makeText(getApplicationContext(),inputText,Toast.LENGTH_SHORT).show();
+            }
+        }).show(getSupportFragmentManager(), "comment");
     }
 }
