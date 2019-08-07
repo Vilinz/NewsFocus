@@ -1,4 +1,6 @@
-package com.example.newsfocus;
+package com.example.newsfocus.Service;
+
+import com.example.newsfocus.Service.MyService;
 
 import java.util.concurrent.TimeUnit;
 

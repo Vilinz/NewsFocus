@@ -11,6 +11,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.newsfocus.HotPage.HotActivity;
+import com.example.newsfocus.MyPage.MyActivity;
+import com.example.newsfocus.StorePage.StoreActivity;
+
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
@@ -18,7 +22,7 @@ import java.util.List;
 
 public class MainActivity
         extends AppCompatActivity
-        implements View.OnClickListener,HotActivity.OnFragmentInteractionListener, StoreActivity.OnFragmentInteractionListener, MyActivity.OnFragmentInteractionListener{
+        implements View.OnClickListener, HotActivity.OnFragmentInteractionListener, StoreActivity.OnFragmentInteractionListener, MyActivity.OnFragmentInteractionListener{
     private TextView text_hot, text_store, text_my;
     private ViewPager vp;
     private HotActivity hot_fragment;

@@ -1,16 +1,10 @@
-package com.example.newsfocus;
+package com.example.newsfocus.HotPage;
 
-import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.ContactsContract;
-import android.util.Log;
 import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +12,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.newsfocus.Classes.News;
+import com.example.newsfocus.R;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

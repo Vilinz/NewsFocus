@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.MyPage;
 
 public class SampleClass {
     private String text;

@@ -1,27 +1,28 @@
-package com.example.newsfocus;
+package com.example.newsfocus.NewsDetail;
 
-import android.app.ActionBar;
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
+import com.example.newsfocus.R;
+import com.example.newsfocus.MyPage.SampleClass;
+import com.example.newsfocus.MyPage.SampleListAdapter;
+import com.example.newsfocus.Service.ServiceInstance;
 import com.example.newsfocus.tools.StringUtils;
 import com.google.gson.JsonObject;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,18 @@ public class NewDetailActivity extends AppCompatActivity {
     private String group_id;
     private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
     private WebView contentWebView;
+    private ListView listView;
+    private List<SampleClass> list;
+    private SampleListAdapter sampleListAdapter;
+    private ScrollView mScrollView;
+    private TextView titleView;
+    private TextView timeView;
+    private TextView authorView;
+
+    private String author;
+    private String time;
+    private String title;
+    private String comments;
 
     @Override
     public boolean onSupportNavigateUp()
@@ -55,11 +68,25 @@ public class NewDetailActivity extends AppCompatActivity {
         }
 
         contentWebView = findViewById(R.id.web_content);
+        listView = findViewById(R.id.listView);
+        mScrollView = findViewById(R.id.scrollView2);
+        titleView = findViewById(R.id.title);
+        timeView = findViewById(R.id.time);
+        authorView = findViewById(R.id.author);
+
+        list = new ArrayList<SampleClass>();
+        sampleListAdapter = new SampleListAdapter(list, getApplicationContext());
+        listView.setAdapter(sampleListAdapter);
+
+        // myScrollView.setOnTouchListener(new TouchListenerImpl());
 
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
             group_id = bundle.getString("group_id");
-            Log.i("group_id", group_id);
+            author = bundle.getString("author");
+            time = bundle.getString("time");
+            title = bundle.getString("title");
+            comments = bundle.getString("comments");
             getDetail(group_id);
         }
     }
@@ -89,6 +116,7 @@ public class NewDetailActivity extends AppCompatActivity {
 
     public void getDetail(String group_id) {
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onNext(JsonObject r) {
                 String html = r.getAsJsonObject("data").get("content").getAsString().replace("\\", "");
@@ -121,13 +149,41 @@ public class NewDetailActivity extends AppCompatActivity {
                 contentWebView.setWebViewClient(new WebViewClient(){
                     @Override
                     public void onPageFinished(WebView view, String url) {
+                        super.onPageFinished(view, url);
+                        initHeader();
                         String onClickFunction = "javascript:findImg()";
                         String setWidthFunction = "javascript:setWidth()";
                         contentWebView.loadUrl(onClickFunction);
                         contentWebView.loadUrl(setWidthFunction);
-                        super.onPageFinished(view, url);
+
+                        list.add(new SampleClass("上传头像", R.drawable.ic_action_upload_image));
+                        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
+                        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
+                        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
                     }
                 });
+                /*
+                listView.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent motionevent) {
+                        if (motionevent.getAction() == MotionEvent.ACTION_DOWN) {
+                            listView.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                        return false;
+                    }
+                });
+                */
+                /*
+                int totalHeight = 0;
+                for (int i = 0; i < sampleListAdapter.getCount(); i++) {
+                     View listItem = sampleListAdapter.getView(i, null, listView);
+                     listItem.measure(0, 0);
+                     totalHeight += listItem.getMeasuredHeight();
+                }
+                ViewGroup.LayoutParams params = listView.getLayoutParams();
+                 params.height = totalHeight + (listView.getDividerHeight() * (sampleListAdapter.getCount() - 1));
+                 listView.setLayoutParams(params);
+                 */
             }
             @Override
             public void onError(Throwable e) {
@@ -145,20 +201,9 @@ public class NewDetailActivity extends AppCompatActivity {
         mCompositeDisposable.add(disposableObserver_login);
     }
 
-    /**
-     * 将html文本内容中包含img标签的图片，宽度变为屏幕宽度，高度根据宽度比例自适应
-     **/
-    public String getNewCleanContent(String htmltext){
-        try {
-            Document doc= Jsoup.parse(htmltext);
-            Elements elements=doc.getElementsByTag("img");
-            for (Element element : elements) {
-                element.attr("width","100%").attr("height","auto");
-            }
-
-            return doc.toString();
-        } catch (Exception e) {
-            return htmltext;
-        }
+    private void initHeader() {
+        titleView.setText(title);
+        timeView.setText("时间" + time);
+        authorView.setText(author);
     }
 }

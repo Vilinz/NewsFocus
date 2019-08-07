@@ -1,21 +1,18 @@
-package com.example.newsfocus;
+package com.example.newsfocus.RegisterPage;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.JsonArray;
+import com.example.newsfocus.LoginPage.LoginActivity;
+import com.example.newsfocus.R;
+import com.example.newsfocus.Service.ServiceInstance;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;

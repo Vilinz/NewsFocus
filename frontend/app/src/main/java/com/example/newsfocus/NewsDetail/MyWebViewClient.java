@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.NewsDetail;
 
 import android.graphics.Bitmap;
 import android.webkit.WebView;

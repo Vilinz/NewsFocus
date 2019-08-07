@@ -1,38 +1,33 @@
-package com.example.newsfocus;
+package com.example.newsfocus.HotPage;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.newsfocus.NewsDetail.MyListView;
+import com.example.newsfocus.NewsDetail.NewDetailActivity;
+import com.example.newsfocus.Classes.News;
+import com.example.newsfocus.R;
+import com.example.newsfocus.Service.ServiceInstance;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.OkHttpClient;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 
 /**
@@ -112,6 +107,10 @@ public class HotActivity extends Fragment {
                 Intent intent = new Intent(getContext(), NewDetailActivity.class);
                 Bundle bundle = new Bundle();
                 bundle.putString("group_id", mData.get(position).getGroup_id());
+                bundle.putString("author", mData.get(position).getAuthor());
+                bundle.putString("time", mData.get(position).getTime());
+                bundle.putString("title", mData.get(position).getTitle());
+                bundle.putString("comments", mData.get(position).getComments());
                 intent.putExtras(bundle);
                 startActivity(intent);
             }

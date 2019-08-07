@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.Classes;
 
 import java.util.List;
 

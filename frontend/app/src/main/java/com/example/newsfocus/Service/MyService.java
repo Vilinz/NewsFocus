@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.Service;
 
 import com.google.gson.JsonObject;
 

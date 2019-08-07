@@ -14,14 +14,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".BigImageActivity"></activity>
+        <activity android:name=".NewsDetail.BigImageActivity"></activity>
         <activity
-            android:name=".LoginActivity"
+            android:name=".LoginPage.LoginActivity"
             android:launchMode="singleTask"></activity>
         <activity
-            android:name=".RegisterActivity"
+            android:name=".RegisterPage.RegisterActivity"
             android:launchMode="singleTask"></activity>
-        <activity android:name=".NewDetailActivity" />
+        <activity android:name=".NewsDetail.NewDetailActivity" />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTask">

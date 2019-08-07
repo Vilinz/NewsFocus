@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.LoginPage;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +12,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.newsfocus.MainActivity;
+import com.example.newsfocus.R;
+import com.example.newsfocus.RegisterPage.RegisterActivity;
+import com.example.newsfocus.Service.ServiceInstance;
 import com.google.gson.JsonObject;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;

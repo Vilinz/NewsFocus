@@ -1,7 +1,6 @@
-package com.example.newsfocus;
+package com.example.newsfocus.NewsDetail;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import android.animation.ObjectAnimator;
@@ -11,12 +10,9 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +24,7 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
+import com.example.newsfocus.R;
 import com.example.newsfocus.tools.*;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.MyPage;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,16 +10,16 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.JavascriptInterface;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.JsonArray;
+import com.example.newsfocus.R;
+import com.example.newsfocus.RegisterPage.RegisterActivity;
+import com.example.newsfocus.Service.ServiceInstance;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;

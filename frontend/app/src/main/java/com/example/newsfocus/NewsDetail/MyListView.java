@@ -1,4 +1,4 @@
-package com.example.newsfocus;
+package com.example.newsfocus.NewsDetail;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -6,6 +6,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ListView;
+
+import com.example.newsfocus.R;
 
 public class MyListView extends ListView implements AbsListView.OnScrollListener {
     private Context mContext;
