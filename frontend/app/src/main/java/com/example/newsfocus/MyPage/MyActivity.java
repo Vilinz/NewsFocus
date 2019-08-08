@@ -1,10 +1,18 @@
 package com.example.newsfocus.MyPage;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,12 +27,20 @@ import android.widget.Toast;
 import com.example.newsfocus.R;
 import com.example.newsfocus.RegisterPage.RegisterActivity;
 import com.example.newsfocus.Service.ServiceInstance;
+import com.example.newsfocus.Service.ServiceInstanceWithToken;
 import com.google.gson.JsonObject;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +48,11 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+
+import android.content.ContentResolver;
 
 
 /**
@@ -65,6 +86,12 @@ public class MyActivity extends Fragment {
 
     private boolean isLogin = false;
     private String username = null;
+    private String telephone;
+    private String avatar;
+
+    public String baseUrl = "http://47.102.84.27:3000/image/avatar/";
+
+    private String token;
 
     public MyActivity() {
         // Required empty public constructor
@@ -115,19 +142,33 @@ public class MyActivity extends Fragment {
         listView.setAdapter(sampleListAdapter);
 
         initView(view);
+
+        headImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_PICK);
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+                startActivityForResult(intent, 0);
+            }
+        });
         try {
             SharedPreferences sp = getActivity().getSharedPreferences("token", Context.MODE_PRIVATE);
             if(sp.contains("token")) {
-                String token = sp.getString("token", null);
+                token = sp.getString("token", null);
+                username = sp.getString("username", null);
+                avatar = sp.getString("avatar", null);
                 Log.i("token2", token);
                 CompositeDisposable mCompositeDisposable = new CompositeDisposable();
                 DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
                     @Override
                     public void onNext(JsonObject r) {
                         Log.i("veri", r.toString());
-                        username = r.get("username").getAsString();
+                        username = r.getAsJsonObject("username").get("username").getAsString();
+                        telephone = r.getAsJsonObject("username").get("telephone").getAsString();
+                        avatar = r.getAsJsonObject("username").get("avatar").getAsString();
                         isLogin = true;
-                        setLogin(username);
+                        setLogin();
                     }
                     @Override
                     public void onError(Throwable e) {
@@ -140,7 +181,7 @@ public class MyActivity extends Fragment {
                         //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
                     }
                 };
-                ServiceInstance.getInstance().verification(token).subscribeOn(Schedulers.newThread()).
+                ServiceInstanceWithToken.getInstanceWithToken(token).getUserInfo(username).subscribeOn(Schedulers.newThread()).
                         observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
                 mCompositeDisposable.add(disposableObserver_login);
             }
@@ -214,13 +255,21 @@ public class MyActivity extends Fragment {
         commentCountView = view.findViewById(R.id.comment_count);
     }
 
-    public void setLogin(String u) {
+    public void setLogin() {
         selectButton.setVisibility(View.GONE);
         headImage.setVisibility(View.VISIBLE);
         usernameView.setVisibility(View.VISIBLE);
         starCountView.setVisibility(View.VISIBLE);
         commentCountView.setVisibility(View.VISIBLE);
-        usernameView.setText(u);
+        usernameView.setText(username);
+        new Thread() {
+            public void run() {
+                Bitmap bitmap = getBitmapFromUrl(baseUrl + avatar + ".png");
+                Message message = Message.obtain();
+                message.obj = bitmap;
+                mHandler.sendMessage(message);
+            }
+        }.start();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -231,5 +280,124 @@ public class MyActivity extends Fragment {
         starCountView.setVisibility(View.VISIBLE);
         commentCountView.setVisibility(View.VISIBLE);
         usernameView.setText(str);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // https://blog.csdn.net/ABC__D/article/details/51790806
+        ContentResolver resolver = getActivity().getContentResolver();
+        if (requestCode == 0) {
+            try {
+                Uri uri = data.getData();
+
+                File file = uri2File(uri);
+
+                upload(file);
+
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(resolver, uri);
+                Bitmap newBitmap = setImgSize(bitmap, 200, 200);
+                headImage.setImageBitmap(newBitmap);
+            }
+            catch (Exception e) {
+
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public Bitmap setImgSize(Bitmap bm, int newWidth ,int newHeight){
+        // https://blog.csdn.net/gxl_1899/article/details/77449908
+        // 获得图片的宽高.
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        // 计算缩放比例.
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // 取得想要缩放的matrix参数.
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        // 得到新的图片.
+        Bitmap newbm = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, true);
+        return newbm;
+    }
+
+    private File uri2File(Uri uri) {
+        String img_path;
+        String[] proj = {MediaStore.Images.Media.DATA};
+        Cursor actualimagecursor = getActivity().managedQuery(uri, proj, null,
+                null, null);
+        if (actualimagecursor == null) {
+            img_path = uri.getPath();
+        } else {
+            int actual_image_column_index = actualimagecursor
+                    .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            actualimagecursor.moveToFirst();
+            img_path = actualimagecursor
+                    .getString(actual_image_column_index);
+        }
+        File file = new File(img_path);
+        return file;
+    }
+
+    private void upload(File file) {
+        //多张图片
+        RequestBody imageBody = RequestBody.create(MediaType.parse("multipart/form-data"), file);
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)//表单类型
+                .addFormDataPart("file", "headImage.png", imageBody)
+                .addFormDataPart("username", username);
+        List<MultipartBody.Part> parts = builder.build().parts();
+
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+            @Override
+            public void onNext(JsonObject r) {
+                Log.i("veri", r.toString());
+            }
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+            }
+        };
+        ServiceInstanceWithToken.getInstanceWithToken(token).uploadImages(parts).subscribeOn(Schedulers.newThread()).
+                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+        mCompositeDisposable.add(disposableObserver_login);
+    }
+
+    private Handler mHandler = new Handler(){
+        public void handleMessage(android.os.Message msg) {
+            super.handleMessage(msg);
+            headImage.setImageBitmap((Bitmap) msg.obj);
+        }
+    };
+
+    public Bitmap getBitmapFromUrl(String urlString){
+        Bitmap bitmap;
+        InputStream is = null;
+        try {
+            URL mUrl= new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
+            is = new BufferedInputStream(connection.getInputStream());
+            bitmap= BitmapFactory.decodeStream(is);
+            connection.disconnect();
+            return bitmap;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally{
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }

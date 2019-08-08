@@ -56,6 +56,9 @@ public class NewDetailActivity extends AppCompatActivity {
     private String comments;
     private EditText commentTextView;
 
+    private String token = null;
+    private String username = null;
+
     @Override
     public boolean onSupportNavigateUp()
     {
@@ -204,12 +207,13 @@ public class NewDetailActivity extends AppCompatActivity {
     private void showCommentDialog() {
         new CommentDialog("优质评论将会被优先展示", new CommentDialog.SendListener() {
             @Override
-            public void sendComment(String inputText) {
+            public void sendComment(final String inputText) {
                 CompositeDisposable mCompositeDisposable = new CompositeDisposable();
                 DisposableObserver<JsonObject> disposableObserver_sendComment = new DisposableObserver<JsonObject>() {
                     @Override
                     public void onNext(JsonObject r) {
                         Log.i("qqqqq", r.toString());
+                        commentListAdapter.addItem(new Comments(1, username, group_id, 0, getTimeStrip(), inputText));
                     }
                     @Override
                     public void onError(Throwable e) {
@@ -226,13 +230,12 @@ public class NewDetailActivity extends AppCompatActivity {
                 try {
                     SharedPreferences sp = getSharedPreferences("token", Context.MODE_PRIVATE);
                     if(sp.contains("token")) {
-                        SimpleDateFormat df = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
-                        Calendar calendar = Calendar.getInstance();
-                        String timeStrip = df.format(calendar.getTime());
+                        String timeStrip = getTimeStrip();
 
                         Log.i("timeStrip", timeStrip);
 
-                        String token = sp.getString("token", null);
+                        token = sp.getString("token", null);
+                        username = sp.getString("username",null);
                         ServiceInstanceWithToken.getInstanceWithToken(token).sendComment("22", group_id, timeStrip, inputText).subscribeOn(Schedulers.newThread()).
                                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
                         mCompositeDisposable.add(disposableObserver_sendComment);
@@ -273,5 +276,11 @@ public class NewDetailActivity extends AppCompatActivity {
         ServiceInstance.getInstance().getCommentByNewsID(group_id).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
         mCompositeDisposable.add(disposableObserver_sendComment);
+    }
+
+    public String getTimeStrip() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        return df.format(calendar.getTime());
     }
 }

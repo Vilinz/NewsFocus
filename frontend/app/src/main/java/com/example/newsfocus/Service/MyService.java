@@ -4,9 +4,13 @@ import com.google.gson.JsonObject;
 
 import java.util.List;
 import io.reactivex.Observable;
+import okhttp3.MultipartBody;
 import retrofit2.http.Field;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
+import retrofit2.http.Multipart;
 import retrofit2.http.POST;
+import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.FormUrlEncoded;
 
@@ -38,4 +42,15 @@ public interface MyService {
 
     @GET("/comment/newsID={newsID}")
     Observable<JsonObject> getCommentByNewsID(@Path("newsID") String newsID);
+
+    @Multipart
+    @POST("/user/avatar")
+    Observable<JsonObject> uploadImages(@Part List<MultipartBody.Part> partList);
+
+    @GET("/image/avatar/{filename}")
+    Observable<JsonObject> getAvatar(@Path("filename") String filename);
+
+    @GET("/user/info/{username}")
+    Observable<JsonObject> getUserInfo(@Path("username") String username);
+
 }

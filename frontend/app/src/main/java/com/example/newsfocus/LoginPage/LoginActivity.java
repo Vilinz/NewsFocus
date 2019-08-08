@@ -65,6 +65,7 @@ public class LoginActivity extends AppCompatActivity {
                             editor.putString("username", username.getText().toString());
                             editor.putString("password", password.getText().toString());
                             editor.putString("token",r.get("token").getAsString());
+                            editor.putString("avatar", "MTc2MjI0NjU3MTIwMDE4MDIxMDU=");
                             Log.i("token1", r.get("token").getAsString());
                             editor.commit();
                             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
