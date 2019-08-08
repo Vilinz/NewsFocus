@@ -1,6 +1,8 @@
 package com.example.newsfocus.NewsDetail;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
@@ -12,19 +14,24 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.newsfocus.Classes.Comments;
 import com.example.newsfocus.R;
 import com.example.newsfocus.MyPage.SampleClass;
 import com.example.newsfocus.MyPage.SampleListAdapter;
 import com.example.newsfocus.Service.ServiceInstance;
+import com.example.newsfocus.Service.ServiceInstanceWithToken;
 import com.example.newsfocus.tools.StringUtils;
 import com.google.gson.JsonObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -34,11 +41,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class NewDetailActivity extends AppCompatActivity {
     private String group_id;
-    private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
     private WebView contentWebView;
-    private ListView listView;
-    private List<SampleClass> list;
-    private SampleListAdapter sampleListAdapter;
+    private CommentListView listView;
+    private List<Comments> list;
+    private CommentListAdapter commentListAdapter;
     private ScrollView mScrollView;
     private TextView titleView;
     private TextView timeView;
@@ -48,7 +54,7 @@ public class NewDetailActivity extends AppCompatActivity {
     private String time;
     private String title;
     private String comments;
-    private TextView commentTextView;
+    private EditText commentTextView;
 
     @Override
     public boolean onSupportNavigateUp()
@@ -74,11 +80,11 @@ public class NewDetailActivity extends AppCompatActivity {
         titleView = findViewById(R.id.title);
         timeView = findViewById(R.id.time);
         authorView = findViewById(R.id.author);
-        commentTextView = findViewById(R.id.comment);
+        commentTextView = findViewById(R.id.commentView);
 
-        list = new ArrayList<SampleClass>();
-        sampleListAdapter = new SampleListAdapter(list, getApplicationContext());
-        listView.setAdapter(sampleListAdapter);
+        list = new ArrayList<Comments>();
+        commentListAdapter = new CommentListAdapter(getApplicationContext(), list);
+        listView.setAdapter(commentListAdapter);
 
         // myScrollView.setOnTouchListener(new TouchListenerImpl());
 
@@ -124,6 +130,8 @@ public class NewDetailActivity extends AppCompatActivity {
     }
 
     public void getDetail(String group_id) {
+
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
@@ -165,34 +173,9 @@ public class NewDetailActivity extends AppCompatActivity {
                         contentWebView.loadUrl(onClickFunction);
                         contentWebView.loadUrl(setWidthFunction);
 
-                        list.add(new SampleClass("上传头像", R.drawable.ic_action_upload_image));
-                        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
-                        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
-                        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
+                        getCommentByNewId();
                     }
                 });
-                /*
-                listView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View view, MotionEvent motionevent) {
-                        if (motionevent.getAction() == MotionEvent.ACTION_DOWN) {
-                            listView.getParent().requestDisallowInterceptTouchEvent(true);
-                        }
-                        return false;
-                    }
-                });
-                */
-                /*
-                int totalHeight = 0;
-                for (int i = 0; i < sampleListAdapter.getCount(); i++) {
-                     View listItem = sampleListAdapter.getView(i, null, listView);
-                     listItem.measure(0, 0);
-                     totalHeight += listItem.getMeasuredHeight();
-                }
-                ViewGroup.LayoutParams params = listView.getLayoutParams();
-                 params.height = totalHeight + (listView.getDividerHeight() * (sampleListAdapter.getCount() - 1));
-                 listView.setLayoutParams(params);
-                 */
             }
             @Override
             public void onError(Throwable e) {
@@ -205,9 +188,11 @@ public class NewDetailActivity extends AppCompatActivity {
                 //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
             }
         };
+
         ServiceInstance.getInstance().getDetail(group_id).subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
         mCompositeDisposable.add(disposableObserver_login);
+
     }
 
     private void initHeader() {
@@ -220,8 +205,73 @@ public class NewDetailActivity extends AppCompatActivity {
         new CommentDialog("优质评论将会被优先展示", new CommentDialog.SendListener() {
             @Override
             public void sendComment(String inputText) {
-                Toast.makeText(getApplicationContext(),inputText,Toast.LENGTH_SHORT).show();
+                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+                DisposableObserver<JsonObject> disposableObserver_sendComment = new DisposableObserver<JsonObject>() {
+                    @Override
+                    public void onNext(JsonObject r) {
+                        Log.i("qqqqq", r.toString());
+                    }
+                    @Override
+                    public void onError(Throwable e) {
+                        Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+                    }
+                };
+
+                try {
+                    SharedPreferences sp = getSharedPreferences("token", Context.MODE_PRIVATE);
+                    if(sp.contains("token")) {
+                        SimpleDateFormat df = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+                        Calendar calendar = Calendar.getInstance();
+                        String timeStrip = df.format(calendar.getTime());
+
+                        Log.i("timeStrip", timeStrip);
+
+                        String token = sp.getString("token", null);
+                        ServiceInstanceWithToken.getInstanceWithToken(token).sendComment("22", group_id, timeStrip, inputText).subscribeOn(Schedulers.newThread()).
+                                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
+                        mCompositeDisposable.add(disposableObserver_sendComment);
+                    }
+                } catch (Exception e) {
+                    Log.i("pppppppppppppp", "ppppppppppppp");
+                }
+
+
             }
         }).show(getSupportFragmentManager(), "comment");
+    }
+
+    public void getCommentByNewId() {
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+        DisposableObserver<JsonObject> disposableObserver_sendComment = new DisposableObserver<JsonObject>() {
+            @Override
+            public void onNext(JsonObject r) {
+                Log.i("ssss", r.toString());
+                int count = r.getAsJsonArray("comments").size();
+                for(int i = 0; i < count; i++) {
+                    JsonObject ob = r.getAsJsonArray("comments").get(i).getAsJsonObject();
+                    commentListAdapter.addItem(new Comments(ob.get("commentID").getAsInt(), ob.get("userID").getAsString(), ob.get("newsID").getAsString(),
+                            ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString()));
+                }
+            }
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+            }
+        };
+        ServiceInstance.getInstance().getCommentByNewsID(group_id).subscribeOn(Schedulers.newThread()).
+                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
+        mCompositeDisposable.add(disposableObserver_sendComment);
     }
 }

@@ -29,5 +29,13 @@ public interface MyService {
     @POST("/user/login")
     Observable<JsonObject> login(@Field("username")String username, @Field("password") String password);
 
+    @FormUrlEncoded
+    @POST("/comment")
+    Observable<JsonObject> sendComment(@Field("userID") String userID, @Field("newsID")String newsID, @Field("time") String time, @Field("content") String content);
 
+    @GET("/comment/username={username}")
+    Observable<JsonObject> getComment(@Path("username") String username);
+
+    @GET("/comment/newsID={newsID}")
+    Observable<JsonObject> getCommentByNewsID(@Path("newsID") String newsID);
 }

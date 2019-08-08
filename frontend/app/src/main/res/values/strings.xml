@@ -15,4 +15,5 @@
     <string name="login_success">登录成功</string>
     <string name="login_again">请重新登录</string>
     <string name="send_comment">发表</string>
+    <string name="comment_hint">写评论...</string>
 </resources>

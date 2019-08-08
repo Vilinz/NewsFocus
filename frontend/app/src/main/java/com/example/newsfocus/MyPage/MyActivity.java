@@ -116,9 +116,10 @@ public class MyActivity extends Fragment {
 
         initView(view);
         try {
-            SharedPreferences sp = this.getActivity().getSharedPreferences("token", Context.MODE_PRIVATE);
+            SharedPreferences sp = getActivity().getSharedPreferences("token", Context.MODE_PRIVATE);
             if(sp.contains("token")) {
                 String token = sp.getString("token", null);
+                Log.i("token2", token);
                 CompositeDisposable mCompositeDisposable = new CompositeDisposable();
                 DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
                     @Override

@@ -25,7 +25,7 @@ let login = async ctx => {
   }
   resLog.info(`POST /user/login Data: user: ${username}, psd: ${password}`);
   if (await loginMatch(username, password)) { // login success
-    const token = jwt.sign({user: username}, appConfig.secret, {expiresIn: '1h'}); // sign token
+    const token = jwt.sign({user: username}, appConfig.secret, {expiresIn: '1m'}); // sign token
     // set token inside cookie
     ctx.cookies.set('jwt', token, {
       httpOnly: true,
