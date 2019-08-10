@@ -6,16 +6,16 @@
     android:layout_height="wrap_content">
 
 
-    <ImageView
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/head_image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:layout_marginStart="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
+        android:src="@drawable/star_before"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/star_big_on" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/username"
@@ -57,7 +57,8 @@
         android:layout_marginRight="5dp"
         app:layout_constraintEnd_toStartOf="@+id/star_count"
         app:layout_constraintTop_toTopOf="parent"
-        android:src="@drawable/username_default"/>
+        android:focusable="false"
+        android:src="@drawable/star_before"/>
 
     <TextView
         android:id="@+id/time"

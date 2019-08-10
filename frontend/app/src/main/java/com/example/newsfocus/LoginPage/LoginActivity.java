@@ -39,6 +39,11 @@ public class LoginActivity extends AppCompatActivity {
         password = findViewById(R.id.password);
         loginButton = findViewById(R.id.login);
 
+        Intent intent = getIntent();
+        if(intent != null) {
+            username.setText(intent.getStringExtra("username"));
+        }
+
         toRegisterView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

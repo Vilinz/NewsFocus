@@ -57,7 +57,7 @@ public class HotActivity extends Fragment {
     private MyListView listView;
 
     private int currentOffset = 0;
-    private int count = 5;
+    private int count = 10;
 
     public HotActivity() {
         // Required empty public constructor

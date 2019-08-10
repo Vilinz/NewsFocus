@@ -16,4 +16,13 @@
     <string name="login_again">请重新登录</string>
     <string name="send_comment">发表</string>
     <string name="comment_hint">写评论...</string>
+    <string name="upload_success">图片上传成功</string>
+    <string name="upload_fail">图片上传失败</string>
+    <string name="comment_success">评论发布成功</string>
+    <string name="comment_fail">评论发布失败</string>
+    <string name="login_first">请先登录</string>
+    <string name="password_missmatch">两次密码不对应</string>
+    <string name="username_re">用户名只能输入大小写字母和数字，最大不超过20个字符</string>
+    <string name="password_re">密码至少长8位</string>
+    <string name="phone_re">电话格式错误</string>
 </resources>

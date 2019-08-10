@@ -7,14 +7,16 @@ public class Comments {
     private int stars;
     private String time;
     private  String comment;
+    private int image_id;
 
-    public Comments(int commentId, String userID, String newsID, int stars, String time, String comment) {
+    public Comments(int commentId, String userID, String newsID, int stars, String time, String comment, int id) {
         this.commentId = commentId;
         this.newsID = newsID;
         this.userID = userID;
         this.stars = stars;
         this.time = time;
         this.comment = comment;
+        this.image_id = id;
     }
 
     public int getCommentId() {
@@ -63,5 +65,13 @@ public class Comments {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public int getImage_id() {
+        return image_id;
+    }
+
+    public void setImage_id(int image_id) {
+        this.image_id = image_id;
     }
 }

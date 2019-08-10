@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -28,6 +29,7 @@ import com.example.newsfocus.R;
 import com.example.newsfocus.RegisterPage.RegisterActivity;
 import com.example.newsfocus.Service.ServiceInstance;
 import com.example.newsfocus.Service.ServiceInstanceWithToken;
+import com.example.newsfocus.tools.BitmapUtils;
 import com.google.gson.JsonObject;
 
 import org.greenrobot.eventbus.EventBus;
@@ -53,6 +55,8 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
 import android.content.ContentResolver;
+
+import static android.content.Context.MODE_PRIVATE;
 
 
 /**
@@ -130,30 +134,8 @@ public class MyActivity extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
 
-        Log.i("ooooooooooo", "creatview");
-        EventBus.getDefault().register(this);
-        final View view = inflater.inflate(R.layout.fragment_my, container, false);
-        listView = view.findViewById(R.id.listView);
-        list = new ArrayList<SampleClass>();
-        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
-        list.add(new SampleClass("上传头像", R.drawable.ic_action_upload_image));
-        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
-        sampleListAdapter = new SampleListAdapter(list, getActivity());
-        listView.setAdapter(sampleListAdapter);
-
-        initView(view);
-
-        headImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setAction(Intent.ACTION_PICK);
-                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
-                startActivityForResult(intent, 0);
-            }
-        });
         try {
-            SharedPreferences sp = getActivity().getSharedPreferences("token", Context.MODE_PRIVATE);
+            SharedPreferences sp = getActivity().getSharedPreferences("token", MODE_PRIVATE);
             if(sp.contains("token")) {
                 token = sp.getString("token", null);
                 username = sp.getString("username", null);
@@ -163,10 +145,12 @@ public class MyActivity extends Fragment {
                 DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
                     @Override
                     public void onNext(JsonObject r) {
-                        Log.i("veri", r.toString());
+                        Log.i("veri", r.getAsJsonObject("username").get("avatar") + "");
                         username = r.getAsJsonObject("username").get("username").getAsString();
                         telephone = r.getAsJsonObject("username").get("telephone").getAsString();
-                        avatar = r.getAsJsonObject("username").get("avatar").getAsString();
+                        if(!(r.getAsJsonObject("username").get("avatar") + "").equals("null")) {
+                            avatar = r.getAsJsonObject("username").get("avatar").getAsString();
+                        }
                         isLogin = true;
                         setLogin();
                     }
@@ -188,6 +172,44 @@ public class MyActivity extends Fragment {
         } catch (Exception e) {
             Log.i("pppppppppppppp", "ppppppppppppp");
         }
+
+        Log.i("ooooooooooo", "creatview");
+        EventBus.getDefault().register(this);
+        final View view = inflater.inflate(R.layout.fragment_my, container, false);
+        listView = view.findViewById(R.id.listView);
+        list = new ArrayList<SampleClass>();
+        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
+        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
+        sampleListAdapter = new SampleListAdapter(list, getActivity());
+        listView.setAdapter(sampleListAdapter);
+
+        initView(view);
+
+        headImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_PICK);
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+                startActivityForResult(intent, 0);
+            }
+        });
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if(position == 0) {
+
+                } else if(position == 1) {
+                    SharedPreferences sp = getActivity().getSharedPreferences("token",MODE_PRIVATE);
+                    if(sp!=null) {
+                        sp.edit().clear().commit();
+                    }
+                    setLogout();
+                }
+                Toast.makeText(getContext(),"你单击的是第"+(position+1)+"条数据",Toast.LENGTH_SHORT).show();
+            }
+        });
 
         if(!isLogin) {
             selectButton.setOnClickListener(new View.OnClickListener() {
@@ -245,6 +267,11 @@ public class MyActivity extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+        /*
+        disposables.clear();
+// Using dispose will clear all and set isDisposed = true, so it will not accept any new disposable
+        disposables.dispose();
+        */
     }
 
     public void initView(View view) {
@@ -272,6 +299,14 @@ public class MyActivity extends Fragment {
         }.start();
     }
 
+    public void setLogout() {
+        selectButton.setVisibility(View.VISIBLE);
+        headImage.setVisibility(View.GONE);
+        usernameView.setVisibility(View.GONE);
+        starCountView.setVisibility(View.GONE);
+        commentCountView.setVisibility(View.GONE);
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void LoginChange(String str) {
         selectButton.setVisibility(View.GONE);
@@ -280,6 +315,44 @@ public class MyActivity extends Fragment {
         starCountView.setVisibility(View.VISIBLE);
         commentCountView.setVisibility(View.VISIBLE);
         usernameView.setText(str);
+        try {
+            SharedPreferences sp = getActivity().getSharedPreferences("token", MODE_PRIVATE);
+            if(sp.contains("token")) {
+                token = sp.getString("token", null);
+                username = sp.getString("username", null);
+                avatar = sp.getString("avatar", null);
+                Log.i("token2", token);
+                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
+                    @Override
+                    public void onNext(JsonObject r) {
+                        Log.i("veri", r.getAsJsonObject("username").get("avatar") + "");
+                        username = r.getAsJsonObject("username").get("username").getAsString();
+                        telephone = r.getAsJsonObject("username").get("telephone").getAsString();
+                        if(!(r.getAsJsonObject("username").get("avatar") + "").equals("null")) {
+                            avatar = r.getAsJsonObject("username").get("avatar").getAsString();
+                        }
+                        isLogin = true;
+                        setLogin();
+                    }
+                    @Override
+                    public void onError(Throwable e) {
+                        Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+                    }
+                };
+                ServiceInstanceWithToken.getInstanceWithToken(token).getUserInfo(username).subscribeOn(Schedulers.newThread()).
+                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
+                mCompositeDisposable.add(disposableObserver_login);
+            }
+        } catch (Exception e) {
+            Log.i("pppppppppppppp", "ppppppppppppp");
+        }
     }
 
     @Override
@@ -289,14 +362,32 @@ public class MyActivity extends Fragment {
         if (requestCode == 0) {
             try {
                 Uri uri = data.getData();
+                String img_path;
+                String[] proj = {MediaStore.Images.Media.DATA};
+                Cursor actualimagecursor = getActivity().managedQuery(uri, proj, null,
+                        null, null);
+                if (actualimagecursor == null) {
+                    img_path = uri.getPath();
+                } else {
+                    int actual_image_column_index = actualimagecursor
+                            .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                    actualimagecursor.moveToFirst();
+                    img_path = actualimagecursor
+                            .getString(actual_image_column_index);
+                }
+                img_path = BitmapUtils.compressImage(img_path);
+                File file = new File(img_path);
 
-                File file = uri2File(uri);
+                Log.i("sizee", file.length()+"");
 
-                upload(file);
+                upload(file, img_path);
 
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(resolver, uri);
-                Bitmap newBitmap = setImgSize(bitmap, 200, 200);
-                headImage.setImageBitmap(newBitmap);
+                //Bitmap bitmap = MediaStore.Images.Media.getBitmap(resolver, uri);
+                //Bitmap newBitmap = setImgSize(bitmap, 50, 50);
+                // BitmapFactory.Options options = new BitmapFactory.Options();
+                // options.inPreferredConfig = Bitmap.Config.RGB_565;
+                // newBitmap = BitmapFactory.decodeResource(newBitmap, options);
+                // upload(file);
             }
             catch (Exception e) {
 
@@ -335,12 +426,12 @@ public class MyActivity extends Fragment {
             img_path = actualimagecursor
                     .getString(actual_image_column_index);
         }
+        img_path = BitmapUtil.compressImageUpload(img_path);
         File file = new File(img_path);
         return file;
     }
 
-    private void upload(File file) {
-        //多张图片
+    private void upload(File file, final String img_path) {
         RequestBody imageBody = RequestBody.create(MediaType.parse("multipart/form-data"), file);
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)//表单类型
@@ -352,11 +443,13 @@ public class MyActivity extends Fragment {
         DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
             @Override
             public void onNext(JsonObject r) {
-                Log.i("veri", r.toString());
+                Bitmap newBitmap = BitmapUtils.getSmallBitmap(img_path);
+                headImage.setImageBitmap(newBitmap);
+                Toast.makeText(getContext(), R.string.upload_success, Toast.LENGTH_LONG).show();
             }
             @Override
             public void onError(Throwable e) {
-                Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), R.string.upload_fail, Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
 

@@ -258,6 +258,9 @@ public class ListAdapter extends BaseAdapter {
                 new Thread() {
                     public void run() {
                         Bitmap bitmap = getBitmapFromUrl(url);
+                        if(bitmap != null) {
+                            addBitmapToLrucaches(url, bitmap);
+                        }
                         Message message = Message.obtain();
                         message.obj = bitmap;
                         mHandler.sendMessage(message);

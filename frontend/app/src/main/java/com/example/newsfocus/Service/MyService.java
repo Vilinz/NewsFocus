@@ -53,4 +53,14 @@ public interface MyService {
     @GET("/user/info/{username}")
     Observable<JsonObject> getUserInfo(@Path("username") String username);
 
+    @FormUrlEncoded
+    @POST("/star/creation")
+    Observable<JsonObject> postStar(@Field("userID") String userID, @Field("commentID") String commentID);
+
+    @FormUrlEncoded
+    @POST("/star/deletion")
+    Observable<JsonObject> deleteStar(@Field("userID") String userID, @Field("commentID") String commentID);
+
+    @GET("/star/comments/username={username}")
+    Observable<JsonObject> getStarList(@Path("username") String username);
 }

@@ -32,6 +32,7 @@ import com.google.gson.JsonObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -70,6 +71,16 @@ public class NewDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_detail);
+
+        SharedPreferences sp = getSharedPreferences("token", Context.MODE_PRIVATE);
+        if(sp.contains("token")) {
+            String timeStrip = getTimeStrip();
+
+            Log.i("timeStrip", timeStrip);
+
+            token = sp.getString("token", null);
+            username = sp.getString("username",null);
+        }
 
         android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         if(actionBar != null){
@@ -200,7 +211,7 @@ public class NewDetailActivity extends AppCompatActivity {
 
     private void initHeader() {
         titleView.setText(title);
-        timeView.setText("时间" + time);
+        timeView.setText(timeStrip2String(time));
         authorView.setText(author);
     }
 
@@ -212,12 +223,13 @@ public class NewDetailActivity extends AppCompatActivity {
                 DisposableObserver<JsonObject> disposableObserver_sendComment = new DisposableObserver<JsonObject>() {
                     @Override
                     public void onNext(JsonObject r) {
-                        Log.i("qqqqq", r.toString());
-                        commentListAdapter.addItem(new Comments(1, username, group_id, 0, getTimeStrip(), inputText));
+                        Toast.makeText(getApplicationContext(), R.string.comment_success, Toast.LENGTH_LONG).show();
+                        int id = r.get("data").getAsInt();
+                        commentListAdapter.addItem(new Comments(id, username, group_id, 0, getTimeStrip(), inputText, R.drawable.star_before));
                     }
                     @Override
                     public void onError(Throwable e) {
-                        Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), R.string.comment_fail, Toast.LENGTH_LONG).show();
                         e.printStackTrace();
                     }
 
@@ -227,24 +239,14 @@ public class NewDetailActivity extends AppCompatActivity {
                     }
                 };
 
-                try {
-                    SharedPreferences sp = getSharedPreferences("token", Context.MODE_PRIVATE);
-                    if(sp.contains("token")) {
-                        String timeStrip = getTimeStrip();
-
-                        Log.i("timeStrip", timeStrip);
-
-                        token = sp.getString("token", null);
-                        username = sp.getString("username",null);
-                        ServiceInstanceWithToken.getInstanceWithToken(token).sendComment("22", group_id, timeStrip, inputText).subscribeOn(Schedulers.newThread()).
-                                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
-                        mCompositeDisposable.add(disposableObserver_sendComment);
-                    }
-                } catch (Exception e) {
-                    Log.i("pppppppppppppp", "ppppppppppppp");
+                if(username != null && token != null) {
+                    String timeStrip = getTimeStrip();
+                    ServiceInstanceWithToken.getInstanceWithToken(token).sendComment(username, group_id, timeStrip, inputText).subscribeOn(Schedulers.newThread()).
+                            observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
+                    mCompositeDisposable.add(disposableObserver_sendComment);
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.login_first, Toast.LENGTH_LONG).show();
                 }
-
-
             }
         }).show(getSupportFragmentManager(), "comment");
     }
@@ -256,11 +258,14 @@ public class NewDetailActivity extends AppCompatActivity {
             public void onNext(JsonObject r) {
                 Log.i("ssss", r.toString());
                 int count = r.getAsJsonArray("comments").size();
+                /*
                 for(int i = 0; i < count; i++) {
                     JsonObject ob = r.getAsJsonArray("comments").get(i).getAsJsonObject();
                     commentListAdapter.addItem(new Comments(ob.get("commentID").getAsInt(), ob.get("userID").getAsString(), ob.get("newsID").getAsString(),
-                            ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString()));
+                            ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString(), R.drawable.star_before));
                 }
+                */
+                getStarByUser(r);
             }
             @Override
             public void onError(Throwable e) {
@@ -279,8 +284,64 @@ public class NewDetailActivity extends AppCompatActivity {
     }
 
     public String getTimeStrip() {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
-        Calendar calendar = Calendar.getInstance();
-        return df.format(calendar.getTime());
+        long timecurrentTimeMillis = System.currentTimeMillis();
+        return timecurrentTimeMillis + "";
+    }
+
+    public String timeStrip2String(String s) {
+        long l = Long.parseLong(s);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date(l);
+        return simpleDateFormat.format(date);
+    }
+
+    public void getStarByUser(final JsonObject obs) {
+        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+        DisposableObserver<JsonObject> disposableObserver_sendComment = new DisposableObserver<JsonObject>() {
+            @Override
+            public void onNext(JsonObject r) {
+                Log.i("lllll", r.toString());
+                int count = r.getAsJsonArray("data").size();
+                int count_comment = obs.getAsJsonArray("comments").size();
+                for(int j = 0; j < count_comment; j++) {
+                    JsonObject ob = obs.getAsJsonArray("comments").get(j).getAsJsonObject();
+                    int tag = 0;
+                    for(int i = 0; i < count; i++) {
+                        if((ob.get("commentID")+ "").equals(r.getAsJsonArray("data").get(i).getAsJsonObject().get("commentID").getAsString())) {
+                            commentListAdapter.addItem(new Comments(ob.get("commentID").getAsInt(), ob.get("userID").getAsString(), ob.get("newsID").getAsString(),
+                                    ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString(), R.drawable.star_after));
+                            tag = 1;
+                            break;
+                        }
+                    }
+                    if(tag == 0) {
+                        commentListAdapter.addItem(new Comments(ob.get("commentID").getAsInt(), ob.get("userID").getAsString(), ob.get("newsID").getAsString(),
+                                ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString(), R.drawable.star_before));
+                    }
+                }
+            }
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
+            }
+        };
+        if(username == null) {
+            int count = obs.getAsJsonArray("comments").size();
+            for(int i = 0; i < count; i++) {
+                JsonObject ob = obs.getAsJsonArray("comments").get(i).getAsJsonObject();
+                commentListAdapter.addItem(new Comments(ob.get("commentID").getAsInt(), ob.get("userID").getAsString(), ob.get("newsID").getAsString(),
+                        ob.get("stars").getAsInt(), ob.get("time").getAsString(), ob.get("content").getAsString(), R.drawable.star_before));
+            }
+        } else {
+            ServiceInstanceWithToken.getInstanceWithToken(token).getStarList(username).subscribeOn(Schedulers.newThread()).
+                    observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_sendComment);
+            mCompositeDisposable.add(disposableObserver_sendComment);
+        }
     }
 }
