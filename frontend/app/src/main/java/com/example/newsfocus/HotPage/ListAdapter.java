@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import com.example.newsfocus.Classes.News;
 import com.example.newsfocus.R;
+import com.example.newsfocus.tools.BitmapUtils;
+import com.example.newsfocus.tools.HttpUtils;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -154,7 +156,7 @@ public class ListAdapter extends BaseAdapter {
 
             }
         }
-        /*
+
         switch (type) {
             case TYPE_1:
                 break;
@@ -170,7 +172,6 @@ public class ListAdapter extends BaseAdapter {
                 viewHolder4.imageView3.setImageResource(R.drawable.ic_action_name);
                 break;
         }
-        */
         ImageLoader imageLoader = new ImageLoader();
         switch (type) {
             case TYPE_1:
@@ -180,37 +181,43 @@ public class ListAdapter extends BaseAdapter {
             case TYPE_2:
                 viewHolder2.title.setText(list.get(i).getTitle());
                 viewHolder2.author.setText(list.get(i).getAuthor());
+                /*
                 if(list.get(i).getImage_info().get(0).equals(viewHolder2.imageView.getTag())) {
                     break;
                 }
-                viewHolder2.imageView.setTag(list.get(i).getImage_info().get(0));
+                */
                 imageLoader.showImageByThead(viewHolder2.imageView, list.get(i).getImage_info().get(0));
+                viewHolder2.imageView.setTag(list.get(i).getImage_info().get(0));
                 break;
             case TYPE_3:
                 viewHolder3.title.setText(list.get(i).getTitle());
                 viewHolder3.author.setText(list.get(i).getAuthor());
+                /*
                 if(list.get(i).getImage_info().get(0).equals(viewHolder3.imageView.getTag())) {
                     break;
                 }
-                viewHolder3.imageView.setTag(list.get(i).getImage_info().get(0));
+                */
                 imageLoader.showImageByThead(viewHolder3.imageView, list.get(i).getImage_info().get(0));
+                viewHolder3.imageView.setTag(list.get(i).getImage_info().get(0));
                 break;
             case TYPE_4:
                 ImageLoader imageLoader1 = new ImageLoader();
                 ImageLoader imageLoader2 = new ImageLoader();
                 viewHolder4.title.setText(list.get(i).getTitle());
                 viewHolder4.author.setText(list.get(i).getAuthor());
+                /*
                 if(list.get(i).getImage_info().get(0).equals(viewHolder4.imageView1.getTag())
                     && list.get(i).getImage_info().get(1).equals(viewHolder4.imageView2.getTag())
                     && list.get(i).getImage_info().get(2).equals(viewHolder4.imageView3.getTag())) {
                     break;
                 }
-                viewHolder4.imageView1.setTag(list.get(i).getImage_info().get(0));
-                viewHolder4.imageView2.setTag(list.get(i).getImage_info().get(1));
-                viewHolder4.imageView3.setTag(list.get(i).getImage_info().get(2));
+                */
                 imageLoader.showImageByThead(viewHolder4.imageView1, list.get(i).getImage_info().get(0));
                 imageLoader1.showImageByThead(viewHolder4.imageView2, list.get(i).getImage_info().get(1));
                 imageLoader2.showImageByThead(viewHolder4.imageView3, list.get(i).getImage_info().get(2));
+                viewHolder4.imageView1.setTag(list.get(i).getImage_info().get(0));
+                viewHolder4.imageView2.setTag(list.get(i).getImage_info().get(1));
+                viewHolder4.imageView3.setTag(list.get(i).getImage_info().get(2));
                 break;
         }
 
@@ -257,7 +264,8 @@ public class ListAdapter extends BaseAdapter {
             } else {
                 new Thread() {
                     public void run() {
-                        Bitmap bitmap = getBitmapFromUrl(url);
+                        Bitmap bitmap = HttpUtils.getBitmapFromUrl(url);
+                        // bitmap = BitmapUtils.setImgSize(bitmap, 700, 500);
                         if(bitmap != null) {
                             addBitmapToLrucaches(url, bitmap);
                         }
@@ -277,31 +285,6 @@ public class ListAdapter extends BaseAdapter {
                 }
             }
         };
-
-
-        public Bitmap getBitmapFromUrl(String urlString){
-            Bitmap bitmap;
-            InputStream is = null;
-            try {
-                URL mUrl= new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
-                is = new BufferedInputStream(connection.getInputStream());
-                bitmap=BitmapFactory.decodeStream(is);
-                connection.disconnect();
-                return bitmap;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }finally{
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
     }
 
     //缓存

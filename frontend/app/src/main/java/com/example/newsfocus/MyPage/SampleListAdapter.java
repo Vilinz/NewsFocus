@@ -8,7 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.newsfocus.MyPage.SampleClass;
+import com.example.newsfocus.Classes.SampleClass;
 import com.example.newsfocus.R;
 
 import java.util.List;

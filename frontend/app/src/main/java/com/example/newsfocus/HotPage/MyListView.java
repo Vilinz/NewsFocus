@@ -1,4 +1,4 @@
-package com.example.newsfocus.NewsDetail;
+package com.example.newsfocus.HotPage;
 
 import android.content.Context;
 import android.util.AttributeSet;

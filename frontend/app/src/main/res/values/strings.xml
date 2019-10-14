@@ -25,4 +25,7 @@
     <string name="username_re">用户名只能输入大小写字母和数字，最大不超过20个字符</string>
     <string name="password_re">密码至少长8位</string>
     <string name="phone_re">电话格式错误</string>
+    <string name="network_error">网络错误</string>
+    <string name="login_fail">登录失败</string>
+    <string name="register_fail">注册失败</string>
 </resources>

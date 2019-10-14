@@ -20,6 +20,7 @@ import com.example.newsfocus.Classes.Comments;
 import com.example.newsfocus.Classes.News;
 import com.example.newsfocus.R;
 import com.example.newsfocus.Service.ServiceInstanceWithToken;
+import com.example.newsfocus.tools.HttpUtils;
 import com.google.gson.JsonObject;
 
 import java.io.BufferedInputStream;
@@ -189,19 +190,6 @@ public class CommentListAdapter extends BaseAdapter {
             this.url = url;
 
             final URL longUrl = new URL(baseUrl + mUrl);
-            /*
-            HttpURLConnection urlcon = (HttpURLConnection) longUrl.openConnection( );
-            urlcon.setRequestMethod("POST");
-            urlcon.setRequestProperty("Content-type", "application/x-www-form-urlencoded");
-            Log.i("code", urlcon.getResponseCode( ) + "");
-            if ( urlcon.getResponseCode( ) != HttpURLConnection.HTTP_OK ) {
-                System.out.println("Posted ok!");
-                bitmap = getBitmapFromLrucache(longUrl.toString());
-            } else {
-                System.out.println("Bad post...");
-                bitmap = getBitmapFromLrucache("http://47.102.84.27:3000/image/avatar/MTc2MjI0NjU3MTIwMDE4MDIxMDU=.png");
-            }
-            */
 
             bitmap = getBitmapFromLrucache(url);
 
@@ -210,9 +198,9 @@ public class CommentListAdapter extends BaseAdapter {
             } else {
                 new Thread() {
                     public void run() {
-                        bitmap = getBitmapFromUrl(longUrl.toString());
+                        bitmap = HttpUtils.getBitmapFromUrl(longUrl.toString());
                         if(bitmap == null) {
-                            bitmap = getBitmapFromUrl("http://47.102.84.27:3000/image/avatar/MTc2MjI0NjU3MTIwMDE4MDIxMDU=.png");
+                            bitmap = HttpUtils.getBitmapFromUrl("http://47.102.84.27:3000/image/avatar/MTc2MjI0NjU3MTIwMDE4MDIxMDU=.png");
                         }
                         if(bitmap != null) {
                             addBitmapToLrucaches(url, bitmap);
@@ -233,31 +221,6 @@ public class CommentListAdapter extends BaseAdapter {
                 }
             }
         };
-
-
-        public Bitmap getBitmapFromUrl(String urlString){
-            Bitmap bitmap;
-            InputStream is = null;
-            try {
-                URL mUrl= new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
-                is = new BufferedInputStream(connection.getInputStream());
-                bitmap=BitmapFactory.decodeStream(is);
-                connection.disconnect();
-                return bitmap;
-            } catch (MalformedURLException e) {
-                return null;
-            } catch (IOException e) {
-                return null;
-            }finally{
-                try {
-                    is.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // return null;
-        }
     }
 
     //缓存
@@ -277,18 +240,6 @@ public class CommentListAdapter extends BaseAdapter {
         Date date = new Date(l);
         return simpleDateFormat.format(date);
     }
-
-    /*
-    public interface onItemLikeListener {
-        void onLikeClick(int i);
-    }
-
-    private onItemLikeListener mOnItemLikeListener;
-
-    public void setOnItemLikeClickListener(onItemLikeListener mOnItemLikeListener) {
-        this.mOnItemLikeListener = mOnItemLikeListener;
-    }
-    */
 
     public void postStar(final int position) {
         CompositeDisposable mCompositeDisposable = new CompositeDisposable();

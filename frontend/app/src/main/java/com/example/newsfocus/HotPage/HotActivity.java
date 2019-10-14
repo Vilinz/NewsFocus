@@ -5,29 +5,15 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Toast;
 
-import com.example.newsfocus.NewsDetail.MyListView;
 import com.example.newsfocus.NewsDetail.NewDetailActivity;
 import com.example.newsfocus.Classes.News;
 import com.example.newsfocus.R;
-import com.example.newsfocus.Service.ServiceInstance;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.schedulers.Schedulers;
 
 
 /**
@@ -38,7 +24,7 @@ import io.reactivex.schedulers.Schedulers;
  * Use the {@link HotActivity#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class HotActivity extends Fragment {
+public class HotActivity extends Fragment implements IHotView{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -51,13 +37,8 @@ public class HotActivity extends Fragment {
     private View view;
 
     private OnFragmentInteractionListener mListener;
-
-    private List<News> mData = new ArrayList<News>();
-    private ListAdapter listAdapter;
     private MyListView listView;
-
-    private int currentOffset = 0;
-    private int count = 10;
+    private HotPresenter hp;
 
     public HotActivity() {
         // Required empty public constructor
@@ -98,19 +79,21 @@ public class HotActivity extends Fragment {
         view = inflater.inflate(R.layout.fragment_hot, container, false);
 
         listView = (MyListView)view.findViewById(R.id.listView);
-        listAdapter = new ListAdapter(getActivity(), mData);
-        listView.setAdapter(listAdapter);
+
+        hp = new HotPresenter(this);
+        hp.initAdapter(getContext(), listView);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getContext(), NewDetailActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putString("group_id", mData.get(position).getGroup_id());
-                bundle.putString("author", mData.get(position).getAuthor());
-                bundle.putString("time", mData.get(position).getTime());
-                bundle.putString("title", mData.get(position).getTitle());
-                bundle.putString("comments", mData.get(position).getComments());
+                News mNew = hp.getNewByPosition(position);
+                bundle.putString("group_id", mNew.getGroup_id());
+                bundle.putString("author", mNew.getAuthor());
+                bundle.putString("time", mNew.getTime());
+                bundle.putString("title", mNew.getTitle());
+                bundle.putString("comments", mNew.getComments());
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -118,53 +101,11 @@ public class HotActivity extends Fragment {
         listView.setONLoadMoreListener(new MyListView.OnLoadMoreListener() {
             @Override
             public void onloadMore() {
-                loadMore();
+                hp.loadMoreData();
             }
         });
 
-        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-            @Override
-            public void onNext(JsonObject r) {
-                int count = r.getAsJsonArray("data").size();
-                Log.i("count", count + "");
-                for(int i = 0; i < count; i++) {
-                    JsonObject ob = r.getAsJsonArray("data").get(i).getAsJsonObject();
-                    String image_infos = ob.get("image_infos").getAsString();
-                    JsonParser jsonParser = new JsonParser();
-                    JsonArray array = (JsonArray) jsonParser.parse(image_infos);
-                    List<String> url = new ArrayList<String>();
-                    for(int j = 0; j < array.size(); j++) {
-                        JsonObject temp = array.get(j).getAsJsonObject();
-                        String url_temp = temp.get("url_prefix").getAsString() + temp.get("web_uri").getAsString();
-                        url.add(url_temp);
-                    }
-                    News n = new News(ob.get("group_id").getAsString(),
-                                        ob.get("title").getAsString(),
-                                        ob.get("author").getAsString(),
-                                        ob.get("time").getAsString(),
-                                        url,
-                                        ob.get("comments").getAsString());
-                    // mData.add(n);
-                    listAdapter.addItem(n);
-                }
-            }
-            @Override
-            public void onError(Throwable e) {
-                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onComplete() {
-                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-            }
-        };
-        ServiceInstance.getInstance().getNewHead(currentOffset, count).subscribeOn(Schedulers.newThread()).
-                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-        currentOffset += count;
-        mCompositeDisposable.add(disposableObserver_login);
-
+        hp.initData();
         return view;
     }
 
@@ -192,6 +133,16 @@ public class HotActivity extends Fragment {
         mListener = null;
     }
 
+    @Override
+    public void setListView() {
+        listView.setLoadCompleted();
+    }
+
+    @Override
+    public void showMsg(int s) {
+        Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -205,51 +156,5 @@ public class HotActivity extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
-    }
-
-    private void loadMore() {
-        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-            @Override
-            public void onNext(JsonObject r) {
-                int count = r.getAsJsonArray("data").size();
-                Log.i("count", count + "");
-                for(int i = 0; i < count; i++) {
-                    JsonObject ob = r.getAsJsonArray("data").get(i).getAsJsonObject();
-                    String image_infos = ob.get("image_infos").getAsString();
-                    JsonParser jsonParser = new JsonParser();
-                    JsonArray array = (JsonArray) jsonParser.parse(image_infos);
-                    List<String> url = new ArrayList<String>();
-                    for(int j = 0; j < array.size(); j++) {
-                        JsonObject temp = array.get(j).getAsJsonObject();
-                        String url_temp = temp.get("url_prefix").getAsString() + temp.get("web_uri").getAsString();
-                        url.add(url_temp);
-                    }
-                    News n = new News(ob.get("group_id").getAsString(),
-                            ob.get("title").getAsString(),
-                            ob.get("author").getAsString(),
-                            ob.get("time").getAsString(),
-                            url,
-                            ob.get("comments").getAsString());
-                    mData.add(n);
-                }
-                // listAdapter.refresh();
-                listView.setLoadCompleted();
-            }
-            @Override
-            public void onError(Throwable e) {
-                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onComplete() {
-                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-            }
-        };
-        ServiceInstance.getInstance().getNewHead(currentOffset, count).subscribeOn(Schedulers.newThread()).
-                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-        currentOffset += count;
-        mCompositeDisposable.add(disposableObserver_login);
     }
 }

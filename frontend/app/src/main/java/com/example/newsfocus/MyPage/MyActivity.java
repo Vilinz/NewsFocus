@@ -25,6 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.newsfocus.Classes.News;
 import com.example.newsfocus.R;
 import com.example.newsfocus.RegisterPage.RegisterActivity;
 import com.example.newsfocus.Service.ServiceInstance;
@@ -67,7 +68,7 @@ import static android.content.Context.MODE_PRIVATE;
  * Use the {@link MyActivity#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MyActivity extends Fragment {
+public class MyActivity extends Fragment implements IMyView {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -76,26 +77,19 @@ public class MyActivity extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    private boolean isLogin;
 
     private OnFragmentInteractionListener mListener;
-    private ListView listView;
-    private List<SampleClass> list;
-    private SampleListAdapter sampleListAdapter;
 
     private Button selectButton;
     private ImageView headImage;
     private TextView usernameView;
     private TextView starCountView;
     private TextView commentCountView;
+    private ListView listView;
 
-    private boolean isLogin = false;
-    private String username = null;
-    private String telephone;
-    private String avatar;
-
+    private MyPresenter mp;
     public String baseUrl = "http://47.102.84.27:3000/image/avatar/";
-
-    private String token;
 
     public MyActivity() {
         // Required empty public constructor
@@ -126,64 +120,21 @@ public class MyActivity extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-        Log.i("ooooooooooo", "creat");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-
-        try {
-            SharedPreferences sp = getActivity().getSharedPreferences("token", MODE_PRIVATE);
-            if(sp.contains("token")) {
-                token = sp.getString("token", null);
-                username = sp.getString("username", null);
-                avatar = sp.getString("avatar", null);
-                Log.i("token2", token);
-                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-                    @Override
-                    public void onNext(JsonObject r) {
-                        Log.i("veri", r.getAsJsonObject("username").get("avatar") + "");
-                        username = r.getAsJsonObject("username").get("username").getAsString();
-                        telephone = r.getAsJsonObject("username").get("telephone").getAsString();
-                        if(!(r.getAsJsonObject("username").get("avatar") + "").equals("null")) {
-                            avatar = r.getAsJsonObject("username").get("avatar").getAsString();
-                        }
-                        isLogin = true;
-                        setLogin();
-                    }
-                    @Override
-                    public void onError(Throwable e) {
-                        Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-                    }
-                };
-                ServiceInstanceWithToken.getInstanceWithToken(token).getUserInfo(username).subscribeOn(Schedulers.newThread()).
-                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-                mCompositeDisposable.add(disposableObserver_login);
-            }
-        } catch (Exception e) {
-            Log.i("pppppppppppppp", "ppppppppppppp");
-        }
-
-        Log.i("ooooooooooo", "creatview");
-        EventBus.getDefault().register(this);
         final View view = inflater.inflate(R.layout.fragment_my, container, false);
+        EventBus.getDefault().register(this);
+
+        mp = new MyPresenter(this);
         listView = view.findViewById(R.id.listView);
-        list = new ArrayList<SampleClass>();
-        list.add(new SampleClass("设置", R.drawable.ic_action_setting));
-        list.add(new SampleClass("退出登录",R.drawable.ic_action_logout));
-        sampleListAdapter = new SampleListAdapter(list, getActivity());
-        listView.setAdapter(sampleListAdapter);
+        mp.initAdapter(listView, getContext());
 
         initView(view);
+        mp.autoLogin(getContext());
 
         headImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -220,7 +171,6 @@ public class MyActivity extends Fragment {
                 }
             });
         }
-
         return view;
     }
 
@@ -248,6 +198,40 @@ public class MyActivity extends Fragment {
         mListener = null;
     }
 
+    @Override
+    public void autoLogin(JsonObject r) {
+        selectButton.setVisibility(View.GONE);
+        headImage.setVisibility(View.VISIBLE);
+        usernameView.setVisibility(View.VISIBLE);
+        starCountView.setVisibility(View.VISIBLE);
+        commentCountView.setVisibility(View.VISIBLE);
+        String username = r.getAsJsonObject("username").get("username").getAsString();
+        String avatar = null;
+        if(!(r.getAsJsonObject("username").get("avatar") + "").equals("null")) {
+            avatar = r.getAsJsonObject("username").get("avatar").getAsString();
+        }
+        usernameView.setText(username);
+        isLogin = true;
+        final String finalAvatar = avatar;
+        mp.downImageFromURL(baseUrl + finalAvatar + ".png");
+    }
+
+    @Override
+    public void updateImage(Bitmap bitmap) {
+        headImage.setImageBitmap(bitmap);
+        Toast.makeText(getContext(), R.string.upload_success, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void setImage(Bitmap bitmap) {
+        headImage.setImageBitmap(bitmap);
+    }
+
+    @Override
+    public void showMsg(int i) {
+        Toast.makeText(getContext(), i, Toast.LENGTH_SHORT).show();
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -267,11 +251,6 @@ public class MyActivity extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
-        /*
-        disposables.clear();
-// Using dispose will clear all and set isDisposed = true, so it will not accept any new disposable
-        disposables.dispose();
-        */
     }
 
     public void initView(View view) {
@@ -280,23 +259,6 @@ public class MyActivity extends Fragment {
         usernameView = view.findViewById(R.id.username);
         starCountView = view.findViewById(R.id.star_count);
         commentCountView = view.findViewById(R.id.comment_count);
-    }
-
-    public void setLogin() {
-        selectButton.setVisibility(View.GONE);
-        headImage.setVisibility(View.VISIBLE);
-        usernameView.setVisibility(View.VISIBLE);
-        starCountView.setVisibility(View.VISIBLE);
-        commentCountView.setVisibility(View.VISIBLE);
-        usernameView.setText(username);
-        new Thread() {
-            public void run() {
-                Bitmap bitmap = getBitmapFromUrl(baseUrl + avatar + ".png");
-                Message message = Message.obtain();
-                message.obj = bitmap;
-                mHandler.sendMessage(message);
-            }
-        }.start();
     }
 
     public void setLogout() {
@@ -315,44 +277,7 @@ public class MyActivity extends Fragment {
         starCountView.setVisibility(View.VISIBLE);
         commentCountView.setVisibility(View.VISIBLE);
         usernameView.setText(str);
-        try {
-            SharedPreferences sp = getActivity().getSharedPreferences("token", MODE_PRIVATE);
-            if(sp.contains("token")) {
-                token = sp.getString("token", null);
-                username = sp.getString("username", null);
-                avatar = sp.getString("avatar", null);
-                Log.i("token2", token);
-                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-                    @Override
-                    public void onNext(JsonObject r) {
-                        Log.i("veri", r.getAsJsonObject("username").get("avatar") + "");
-                        username = r.getAsJsonObject("username").get("username").getAsString();
-                        telephone = r.getAsJsonObject("username").get("telephone").getAsString();
-                        if(!(r.getAsJsonObject("username").get("avatar") + "").equals("null")) {
-                            avatar = r.getAsJsonObject("username").get("avatar").getAsString();
-                        }
-                        isLogin = true;
-                        setLogin();
-                    }
-                    @Override
-                    public void onError(Throwable e) {
-                        Toast.makeText(getContext(), R.string.login_again, Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-                    }
-                };
-                ServiceInstanceWithToken.getInstanceWithToken(token).getUserInfo(username).subscribeOn(Schedulers.newThread()).
-                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-                mCompositeDisposable.add(disposableObserver_login);
-            }
-        } catch (Exception e) {
-            Log.i("pppppppppppppp", "ppppppppppppp");
-        }
+        mp.autoLogin(getContext());
     }
 
     @Override
@@ -377,120 +302,12 @@ public class MyActivity extends Fragment {
                 }
                 img_path = BitmapUtils.compressImage(img_path);
                 File file = new File(img_path);
-
                 Log.i("sizee", file.length()+"");
-
-                upload(file, img_path);
-
-                //Bitmap bitmap = MediaStore.Images.Media.getBitmap(resolver, uri);
-                //Bitmap newBitmap = setImgSize(bitmap, 50, 50);
-                // BitmapFactory.Options options = new BitmapFactory.Options();
-                // options.inPreferredConfig = Bitmap.Config.RGB_565;
-                // newBitmap = BitmapFactory.decodeResource(newBitmap, options);
-                // upload(file);
+                mp.uploadImage(file, img_path);
             }
             catch (Exception e) {
-
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
-    }
-
-    public Bitmap setImgSize(Bitmap bm, int newWidth ,int newHeight){
-        // https://blog.csdn.net/gxl_1899/article/details/77449908
-        // 获得图片的宽高.
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        // 计算缩放比例.
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // 取得想要缩放的matrix参数.
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
-        // 得到新的图片.
-        Bitmap newbm = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, true);
-        return newbm;
-    }
-
-    private File uri2File(Uri uri) {
-        String img_path;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor actualimagecursor = getActivity().managedQuery(uri, proj, null,
-                null, null);
-        if (actualimagecursor == null) {
-            img_path = uri.getPath();
-        } else {
-            int actual_image_column_index = actualimagecursor
-                    .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            actualimagecursor.moveToFirst();
-            img_path = actualimagecursor
-                    .getString(actual_image_column_index);
-        }
-        img_path = BitmapUtil.compressImageUpload(img_path);
-        File file = new File(img_path);
-        return file;
-    }
-
-    private void upload(File file, final String img_path) {
-        RequestBody imageBody = RequestBody.create(MediaType.parse("multipart/form-data"), file);
-        MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)//表单类型
-                .addFormDataPart("file", "headImage.png", imageBody)
-                .addFormDataPart("username", username);
-        List<MultipartBody.Part> parts = builder.build().parts();
-
-        CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-        DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-            @Override
-            public void onNext(JsonObject r) {
-                Bitmap newBitmap = BitmapUtils.getSmallBitmap(img_path);
-                headImage.setImageBitmap(newBitmap);
-                Toast.makeText(getContext(), R.string.upload_success, Toast.LENGTH_LONG).show();
-            }
-            @Override
-            public void onError(Throwable e) {
-                Toast.makeText(getContext(), R.string.upload_fail, Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onComplete() {
-                //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-            }
-        };
-        ServiceInstanceWithToken.getInstanceWithToken(token).uploadImages(parts).subscribeOn(Schedulers.newThread()).
-                observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-        mCompositeDisposable.add(disposableObserver_login);
-    }
-
-    private Handler mHandler = new Handler(){
-        public void handleMessage(android.os.Message msg) {
-            super.handleMessage(msg);
-            headImage.setImageBitmap((Bitmap) msg.obj);
-        }
-    };
-
-    public Bitmap getBitmapFromUrl(String urlString){
-        Bitmap bitmap;
-        InputStream is = null;
-        try {
-            URL mUrl= new URL(urlString);
-            HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
-            is = new BufferedInputStream(connection.getInputStream());
-            bitmap= BitmapFactory.decodeStream(is);
-            connection.disconnect();
-            return bitmap;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }finally{
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
     }
 }

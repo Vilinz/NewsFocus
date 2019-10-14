@@ -23,16 +23,18 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements ILoginView {
     private TextView toRegisterView;
     private Button loginButton;
     private EditText username;
     private EditText password;
+    private LoginPresenter lp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        lp = new LoginPresenter(this);
 
         toRegisterView = findViewById(R.id.to_register);
         username = findViewById(R.id.username);
@@ -47,52 +49,46 @@ public class LoginActivity extends AppCompatActivity {
         toRegisterView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-                startActivity(intent);
+                toRegister();
             }
         });
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-                    @Override
-                    public void onNext(JsonObject r) {
-                        Log.i("Login", r.toString());
-                        String result = r.get("message").getAsString();
-                        if(result.equals("success")) {
-                            Toast.makeText(getApplicationContext(), R.string.login_success, Toast.LENGTH_LONG).show();
-                            SharedPreferences sharedPreferences= getSharedPreferences("token", Context.MODE_PRIVATE);
-                            //步骤2： 实例化SharedPreferences.Editor对象
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            //步骤3：将获取过来的值放入文件
-                            editor.putString("username", username.getText().toString());
-                            editor.putString("password", password.getText().toString());
-                            editor.putString("token",r.get("token").getAsString());
-                            editor.putString("avatar", "MTc2MjI0NjU3MTIwMDE4MDIxMDU=");
-                            Log.i("token1", r.get("token").getAsString());
-                            editor.commit();
-                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                            intent.putExtra("username", username.getText().toString());
-                            startActivity(intent);
-                        }
-                    }
-                    @Override
-                    public void onError(Throwable e) {
-                        Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-                    }
-                };
-                ServiceInstance.getInstance().login(username.getText().toString(), password.getText().toString()).subscribeOn(Schedulers.newThread()).
-                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-                mCompositeDisposable.add(disposableObserver_login);
+                login();
             }
         });
+    }
+
+    public void login() {
+        lp.login(username.getText().toString(), password.getText().toString());
+    }
+
+    @Override
+    public void setLogin(JsonObject r) {
+        SharedPreferences sharedPreferences = getSharedPreferences("token", Context.MODE_PRIVATE);
+        //步骤2： 实例化SharedPreferences.Editor对象
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        //步骤3：将获取过来的值放入文件
+        editor.putString("username", username.getText().toString());
+        editor.putString("password", password.getText().toString());
+        editor.putString("token",r.get("token").getAsString());
+        editor.putString("avatar", "MTc2MjI0NjU3MTIwMDE4MDIxMDU=");
+        editor.commit();
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("username", username.getText().toString());
+        startActivity(intent);
+    }
+
+    @Override
+    public void toRegister() {
+        Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void showMsg(int s) {
+        Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
     }
 }

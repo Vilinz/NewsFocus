@@ -20,7 +20,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class RegisterActivity extends AppCompatActivity {
+public class RegisterActivity extends AppCompatActivity implements IRegisterView {
     private Button registerButton;
     private TextView toLoginView;
 
@@ -28,13 +28,14 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText password;
     private EditText passwordRepeat;
     private EditText telephone;
-
-    private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+    private RegisterPresenter rp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        rp = new RegisterPresenter(this);
 
         registerButton = findViewById(R.id.register);
         toLoginView = findViewById(R.id.to_login);
@@ -47,36 +48,11 @@ public class RegisterActivity extends AppCompatActivity {
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DisposableObserver<JsonObject> disposableObserver_login = new DisposableObserver<JsonObject>() {
-                    @Override
-                    public void onNext(JsonObject r) {
-                        String result = r.get("message").getAsString();
-                        if(result.equals("success")) {
-                            Toast.makeText(getApplicationContext(), R.string.register_success, Toast.LENGTH_LONG).show();
-                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                            intent.putExtra("username", username.getText().toString());
-                            startActivity(intent);
-                        }
-                    }
-                    @Override
-                    public void onError(Throwable e) {
-                        Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        //Toast.makeText(GithubApi.this, R.string.network_error, Toast.LENGTH_LONG).show();
-                    }
-                };
-
                 if(ValidateUtil.isAccount(username.getText().toString())) {
                     if(ValidateUtil.isPhone(telephone.getText().toString())) {
                         if(ValidateUtil.isPassword(password.getText().toString())) {
                             if(password.getText().toString().equals(passwordRepeat.getText().toString())) {
-                                ServiceInstance.getInstance().register(username.getText().toString(), password.getText().toString(), telephone.getText().toString()).subscribeOn(Schedulers.newThread()).
-                                        observeOn(AndroidSchedulers.mainThread()).subscribe(disposableObserver_login);
-                                mCompositeDisposable.add(disposableObserver_login);
+                                rp.register(username.getText().toString(), password.getText().toString(), telephone.getText().toString());
                             } else {
                                 Toast.makeText(getApplicationContext(), R.string.password_missmatch, Toast.LENGTH_LONG).show();
                             }
@@ -99,5 +75,18 @@ public class RegisterActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    public void registerSuccess() {
+        Toast.makeText(getApplicationContext(), R.string.register_success, Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+        intent.putExtra("username", username.getText().toString());
+        startActivity(intent);
+    }
+
+    @Override
+    public void showMsg(int i) {
+        Toast.makeText(getApplicationContext(), i, Toast.LENGTH_SHORT).show();
     }
 }
