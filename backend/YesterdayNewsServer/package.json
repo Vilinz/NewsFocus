@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/xwy27/YesterdayNewsServer#readme",
   "dependencies": {
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "koa": "^2.2.0",
     "koa-body": "^4.0.7",
     "koa-jwt": "^3.5.1",
